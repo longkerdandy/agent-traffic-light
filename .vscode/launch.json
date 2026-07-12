@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/server/AgentTrafficLightServer/bin/Debug/net9.0/AgentTrafficLightServer.dll",
+      "program": "${workspaceFolder}/server/AgentTrafficLightServer/bin/Debug/net10.0/AgentTrafficLightServer.dll",
       "args": [],
       "cwd": "${workspaceFolder}/server/AgentTrafficLightServer",
       "stopAtEntry": false,
