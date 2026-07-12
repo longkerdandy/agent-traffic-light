@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>AgentTrafficLightServer</AssemblyName>
+    <RootNamespace>AgentTrafficLight.Server</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentTrafficLight.Contracts\AgentTrafficLight.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

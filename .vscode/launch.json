@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Server",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/server/AgentTrafficLightServer/bin/Debug/net9.0/AgentTrafficLightServer.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/server/AgentTrafficLightServer",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  ]
+}

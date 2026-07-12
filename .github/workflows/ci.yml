@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: server/global.json
+
+      - name: Restore
+        run: dotnet restore server/agent-traffic-light.sln
+
+      - name: Build
+        run: dotnet build server/agent-traffic-light.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test server/agent-traffic-light.sln --no-build --configuration Release --verbosity normal
+
+      - name: Format check
+        run: dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed
