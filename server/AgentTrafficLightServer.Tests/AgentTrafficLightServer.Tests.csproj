@@ -5,6 +5,8 @@
     <RootNamespace>AgentTrafficLight.Server.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <!-- NETSDK1188 is raised when running in invariant globalization mode (no ICU installed). -->
     <NoWarn>$(NoWarn);NETSDK1188;CA1707;CA1861</NoWarn>
   </PropertyGroup>

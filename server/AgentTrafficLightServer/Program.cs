@@ -21,9 +21,24 @@ public static class Program
 
         builder.Services.Configure<SerialOptions>(
             builder.Configuration.GetSection(SerialOptions.SectionName));
+        builder.Services.Configure<BleOptions>(
+            builder.Configuration.GetSection(BleOptions.SectionName));
+        builder.Services.Configure<TrafficLightOptions>(
+            builder.Configuration.GetSection(TrafficLightOptions.SectionName));
 
         builder.Services.AddSingleton<ISerialController, SerialController>();
-        builder.Services.AddSingleton<ITrafficLightController, TrafficLightController>();
+        builder.Services.AddSingleton<ITrafficLightController>(static provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TrafficLightOptions>>().Value;
+            if (options.Transport.Equals("Ble", StringComparison.OrdinalIgnoreCase))
+            {
+                return provider.GetRequiredService<BleTrafficLightController>();
+            }
+
+            return provider.GetRequiredService<TrafficLightController>();
+        });
+        builder.Services.AddSingleton<BleTrafficLightController>();
+        builder.Services.AddSingleton<TrafficLightController>();
         builder.Services.AddHostedService<TestHarnessHostedService>();
 
         var host = builder.Build();
