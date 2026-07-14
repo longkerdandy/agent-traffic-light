@@ -2,6 +2,9 @@ using AgentTrafficLight.Server.Services;
 
 namespace AgentTrafficLight.Server.Tests.Services;
 
+/// <summary>
+/// Tests for <see cref="SerialPortScorer"/>.
+/// </summary>
 public class SerialPortScorerTests
 {
     [Fact]

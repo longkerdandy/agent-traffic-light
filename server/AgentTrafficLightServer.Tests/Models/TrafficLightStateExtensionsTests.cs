@@ -2,6 +2,9 @@ using AgentTrafficLight.Server.Models;
 
 namespace AgentTrafficLight.Server.Tests.Models;
 
+/// <summary>
+/// Tests for <see cref="TrafficLightStateExtensions"/>.
+/// </summary>
 public class TrafficLightStateExtensionsTests
 {
     [Theory]

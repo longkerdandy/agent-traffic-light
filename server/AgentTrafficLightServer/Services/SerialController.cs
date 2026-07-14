@@ -6,6 +6,10 @@ using Microsoft.Extensions.Options;
 
 namespace AgentTrafficLight.Server.Services;
 
+/// <summary>
+/// Manages the serial connection to the AgentCore-Light hardware, including
+/// automatic port detection, command writing, and reconnect logic.
+/// </summary>
 public sealed class SerialController : ISerialController, IDisposable
 {
     private readonly SerialOptions _options;
@@ -15,8 +19,14 @@ public sealed class SerialController : ISerialController, IDisposable
     private SerialPort? _port;
     private bool _disposed;
 
+    /// <inheritdoc />
     public bool IsConnected => _port is { IsOpen: true };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerialController"/> class.
+    /// </summary>
+    /// <param name="options">Serial connection options.</param>
+    /// <param name="logger">The logger.</param>
     public SerialController(IOptions<SerialOptions> options, ILogger<SerialController> logger)
     {
         _options = options.Value;
@@ -29,6 +39,7 @@ public sealed class SerialController : ISerialController, IDisposable
             interval);
     }
 
+    /// <inheritdoc />
     public async Task WriteAsync(string command, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -233,6 +244,7 @@ public sealed class SerialController : ISerialController, IDisposable
         _port = null;
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_disposed)
@@ -246,6 +258,7 @@ public sealed class SerialController : ISerialController, IDisposable
         _lock.Dispose();
     }
 
+    /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
         Dispose();

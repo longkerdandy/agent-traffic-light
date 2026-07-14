@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AgentTrafficLight.Server.Tests.Services;
 
+/// <summary>
+/// Tests for <see cref="TrafficLightController"/>.
+/// </summary>
 public class TrafficLightControllerTests
 {
     [Theory]

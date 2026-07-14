@@ -29,4 +29,6 @@ jobs:
         run: dotnet test server/agent-traffic-light.sln --no-build --configuration Release --verbosity normal
 
       - name: Format check
-        run: dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed
+        run: |
+          dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed
+          dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed style

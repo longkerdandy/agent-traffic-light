@@ -2,6 +2,9 @@ using AgentTrafficLight.Server.Models;
 
 namespace AgentTrafficLight.Server.Services;
 
+/// <summary>
+/// Interactive command-line hosted service for manually testing traffic-light states.
+/// </summary>
 public sealed class TestHarnessHostedService : BackgroundService
 {
     private static readonly TrafficLightState[] s_demoStates =
@@ -17,6 +20,11 @@ public sealed class TestHarnessHostedService : BackgroundService
     private readonly ITrafficLightController _controller;
     private readonly IHostApplicationLifetime _lifetime;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestHarnessHostedService"/> class.
+    /// </summary>
+    /// <param name="controller">The traffic-light controller.</param>
+    /// <param name="lifetime">The host application lifetime.</param>
     public TestHarnessHostedService(
         ITrafficLightController controller,
         IHostApplicationLifetime lifetime)
@@ -25,6 +33,7 @@ public sealed class TestHarnessHostedService : BackgroundService
         _lifetime = lifetime;
     }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Console.WriteLine();

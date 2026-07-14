@@ -4,9 +4,17 @@ using AgentTrafficLight.Server.Services;
 
 namespace AgentTrafficLight.Server;
 
+/// <summary>
+/// Application entry point for the Agent Traffic Light server.
+/// </summary>
 [ExcludeFromCodeCoverage]
 public static class Program
 {
+    /// <summary>
+    /// Configures services and starts the host.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task Main(string[] args)
     {
         var builder = Host.CreateApplicationBuilder(args);
