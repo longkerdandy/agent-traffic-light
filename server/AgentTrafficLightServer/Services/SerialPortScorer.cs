@@ -5,7 +5,17 @@ namespace AgentTrafficLight.Server.Services;
 /// </summary>
 public static class SerialPortScorer
 {
-    private static readonly string[] s_positiveKeywords = ["esp32", "usb", "serial", "jtag", "cp210", "ch340", "ftdi"];
+    private static readonly (string Keyword, int Score)[] s_positiveKeywords =
+    [
+        ("esp32", 100),
+        ("usb", 20),
+        ("jtag", 10),
+        ("serial", 10),
+        ("cp210", 5),
+        ("ch340", 5),
+        ("ftdi", 5)
+    ];
+
     private static readonly string[] s_negativeKeywords = ["bluetooth", "bt", "rfcomm"];
 
     /// <summary>
@@ -25,7 +35,7 @@ public static class SerialPortScorer
             StringComparer.OrdinalIgnoreCase) ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         string? bestPort = null;
-        var bestScore = int.MinValue;
+        var bestScore = 0;
 
         foreach (var port in portNames)
         {
@@ -37,7 +47,7 @@ public static class SerialPortScorer
                 continue;
             }
 
-            var score = s_positiveKeywords.Sum(k => text.Contains(k, StringComparison.Ordinal) ? 1 : 0);
+            var score = s_positiveKeywords.Sum(k => text.Contains(k.Keyword, StringComparison.Ordinal) ? k.Score : 0);
             if (score <= bestScore)
             {
                 continue;
