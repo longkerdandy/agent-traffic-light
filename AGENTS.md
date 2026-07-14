@@ -106,6 +106,16 @@ The server model uses these canonical states (`TrafficLightState`):
 
 The firmware treats `wait_confirm`, `confirm`, `waiting`, and `wait` identically (yellow steady). The server collapses them into `WaitConfirm`.
 
+### 2.5 Firmware Version Limitation
+
+The stock firmware (`esp32_c3_traffic_light.ino`) does not expose a version number or a version-query command. Although the official dashboard hard-codes a display value of `v1.0.3`, there is no runtime mechanism to read the firmware version from the device.
+
+Implications for this project:
+
+- The server cannot detect or validate the firmware version at runtime.
+- Any protocol extensions (e.g., a `version` command) require modifying and re-flashing the firmware.
+- Until the firmware is extended, treat the hardware as implementing the command set documented in section 2.3.
+
 ## 3. Current Implementation Status
 
 The server is in early scaffolding:
