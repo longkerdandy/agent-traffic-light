@@ -55,9 +55,9 @@ public sealed class SerialController : ISerialController, IDisposable
                 return;
             }
 
-            var bytes = Encoding.UTF8.GetBytes(command + "\n");
-            await _port.BaseStream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
-            await _port.BaseStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+            var line = command + "\n";
+            _port.Write(line);
+            _port.BaseStream.Flush();
             _logger.LogDebug("Wrote command '{Command}' to serial port", command);
         }
         catch (Exception ex)
@@ -119,19 +119,47 @@ public sealed class SerialController : ISerialController, IDisposable
 
             _port = new SerialPort(portName, _options.BaudRate)
             {
-                DtrEnable = _options.DtrEnable,
-                RtsEnable = _options.RtsEnable,
-                ReadTimeout = 1000,
-                WriteTimeout = 1000,
+                ReadTimeout = 300,
+                WriteTimeout = 5000,
                 Encoding = Encoding.UTF8
             };
             _port.Open();
+
+            // Explicitly set DTR/RTS after opening to avoid resetting the ESP32 on connect.
+            _port.DtrEnable = _options.DtrEnable;
+            _port.RtsEnable = _options.RtsEnable;
+
+            // Allow the ESP32 to settle after opening the port and drain any startup bytes,
+            // matching the behavior of the official Python bridge.
+            await Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken).ConfigureAwait(false);
+            DrainInputBuffer();
+
             _logger.LogInformation("Serial port {Port} opened", portName);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to open serial port");
             ClosePort();
+        }
+    }
+
+    private void DrainInputBuffer()
+    {
+        if (_port is not { IsOpen: true })
+        {
+            return;
+        }
+
+        try
+        {
+            while (_port.BytesToRead > 0)
+            {
+                _port.ReadByte();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to drain serial input buffer");
         }
     }
 
