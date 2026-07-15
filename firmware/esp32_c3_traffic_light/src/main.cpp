@@ -36,7 +36,7 @@
 
 // GPIO 修改集中放这里，后续换线只需要改这三个定义。
 #define RED_LED_PIN 21
-#define YELLOW_LED_PIN 10
+#define YELLOW_LED_PIN 2
 #define GREEN_LED_PIN 20
 
 // 每个灯独立使用一个 PWM 通道，限制最大占空比以降低 GPIO 电流。
