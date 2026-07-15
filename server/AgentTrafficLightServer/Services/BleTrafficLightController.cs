@@ -2,6 +2,7 @@ using System.Globalization;
 using AgentTrafficLight.Server.Configuration;
 using AgentTrafficLight.Server.Models;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
@@ -145,8 +146,6 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
             var service = await GetServiceAsync(cancellationToken).ConfigureAwait(false);
             _characteristic = await GetCharacteristicAsync(service, cancellationToken).ConfigureAwait(false);
 
-            // The actual connection may only be established after requesting information
-            // from the device, so wait for the GATT session to become active.
             await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
             _logger.LogInformation("BLE GATT session active");
         }
@@ -223,6 +222,20 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
     private async Task<BluetoothLEDevice?> GetDeviceAsync(CancellationToken cancellationToken)
     {
+        // Prefer already-enumerated devices so we can connect without scanning.
+        var device = await GetEnumeratedDeviceAsync(cancellationToken).ConfigureAwait(false);
+        if (device != null)
+        {
+            return device;
+        }
+
+        // Fall back to active scanning. Windows desktop apps often need a live
+        // advertisement watcher before they can connect to an unpaired peripheral.
+        return await ScanForDeviceAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<BluetoothLEDevice?> GetEnumeratedDeviceAsync(CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrEmpty(_options.DeviceAddress))
         {
             var address = ParseMacAddress(_options.DeviceAddress);
@@ -258,15 +271,98 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
             }
         }
 
-        if (!string.IsNullOrEmpty(_options.DeviceAddress))
+        return null;
+    }
+
+    private async Task<BluetoothLEDevice?> ScanForDeviceAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting BLE advertisement scan");
+
+        var tcs = new TaskCompletionSource<ulong?>();
+        var watcher = new BluetoothLEAdvertisementWatcher
         {
-            _logger.LogInformation("Falling back to FromBluetoothAddressAsync for {Address}", _options.DeviceAddress);
-            return await BluetoothLEDevice.FromBluetoothAddressAsync(ParseMacAddress(_options.DeviceAddress))
+            ScanningMode = BluetoothLEScanningMode.Active,
+        };
+
+        watcher.SignalStrengthFilter.OutOfRangeTimeout = TimeSpan.FromMilliseconds(2000);
+        watcher.SignalStrengthFilter.SamplingInterval = TimeSpan.FromMilliseconds(0);
+
+        TypedEventHandler<BluetoothLEAdvertisementWatcher, BluetoothLEAdvertisementReceivedEventArgs> handler =
+            (_, args) =>
+            {
+                if (tcs.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                var address = FormatMacAddress(args.BluetoothAddress);
+                _logger.LogDebug(
+                    "BLE advertisement from {Address} (local name: {LocalName}, rssi: {Rssi})",
+                    address,
+                    args.Advertisement.LocalName,
+                    args.RawSignalStrengthInDBm);
+
+                if (MatchesOptions(args))
+                {
+                    _logger.LogInformation(
+                        "Found matching BLE device {Address} ({LocalName})",
+                        address,
+                        args.Advertisement.LocalName);
+                    tcs.TrySetResult(args.BluetoothAddress);
+                }
+            };
+
+        watcher.Received += handler;
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromMilliseconds(_options.ScanTimeoutMs));
+
+        try
+        {
+            watcher.Start();
+
+            var address = await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+            if (!address.HasValue)
+            {
+                return null;
+            }
+
+            return await BluetoothLEDevice.FromBluetoothAddressAsync(address.Value)
                 .AsTask(cancellationToken)
                 .ConfigureAwait(false);
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("BLE advertisement scan timed out");
+            return null;
+        }
+        finally
+        {
+            watcher.Received -= handler;
+            watcher.Stop();
+        }
+    }
 
-        return null;
+    private bool MatchesOptions(BluetoothLEAdvertisementReceivedEventArgs args)
+    {
+        if (!string.IsNullOrEmpty(_options.DeviceAddress))
+        {
+            var scannedAddress = FormatMacAddress(args.BluetoothAddress);
+            if (string.Equals(scannedAddress, _options.DeviceAddress, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(_options.DeviceName))
+        {
+            if (string.Equals(args.Advertisement.LocalName, _options.DeviceName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static ulong ParseMacAddress(string address)
@@ -284,6 +380,14 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         }
 
         return value;
+    }
+
+    private static string FormatMacAddress(ulong address)
+    {
+        return string.Join(
+            ":",
+            Enumerable.Range(0, 6)
+                .Select(i => ((address >> ((5 - i) * 8)) & 0xFF).ToString("X2", CultureInfo.InvariantCulture)));
     }
 
     private void DisposeConnection()
