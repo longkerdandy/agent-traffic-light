@@ -4,6 +4,7 @@ using AgentTrafficLight.Server.Models;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
+using Windows.Foundation;
 using Windows.Storage.Streams;
 
 namespace AgentTrafficLight.Server.Services;
@@ -106,6 +107,8 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
         _logger.LogInformation("BLE device object obtained for {Address}", _options.DeviceAddress);
 
+        await WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+
         const int maxAttempts = 3;
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
@@ -151,6 +154,49 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         }
 
         throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
+    }
+
+    private async Task WaitForConnectionAsync(CancellationToken cancellationToken)
+    {
+        if (_device == null)
+        {
+            return;
+        }
+
+        if (_device.ConnectionStatus == BluetoothConnectionStatus.Connected)
+        {
+            _logger.LogInformation("BLE device already connected");
+            return;
+        }
+
+        _logger.LogInformation("Waiting for BLE device to connect...");
+
+        var tcs = new TaskCompletionSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(5));
+
+        TypedEventHandler<BluetoothLEDevice, object?> handler = (sender, _) =>
+        {
+            if (sender is { ConnectionStatus: BluetoothConnectionStatus.Connected })
+            {
+                tcs.TrySetResult();
+            }
+        };
+
+        _device.ConnectionStatusChanged += handler;
+        try
+        {
+            await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+            _logger.LogInformation("BLE device connected");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Timed out waiting for BLE device connection status");
+        }
+        finally
+        {
+            _device.ConnectionStatusChanged -= handler;
+        }
     }
 
     private async Task<BluetoothLEDevice?> GetDeviceAsync(CancellationToken cancellationToken)
