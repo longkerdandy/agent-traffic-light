@@ -13,7 +13,7 @@ public interface ITrafficLightController
     TrafficLightState CurrentState { get; }
 
     /// <summary>
-    /// Sets the traffic-light state and writes the corresponding serial command.
+    /// Sets the traffic-light state and writes the corresponding command to the hardware.
     /// </summary>
     /// <param name="state">The desired state.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

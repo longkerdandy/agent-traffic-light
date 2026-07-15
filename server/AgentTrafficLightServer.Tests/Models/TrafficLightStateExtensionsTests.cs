@@ -16,8 +16,8 @@ public class TrafficLightStateExtensionsTests
     [InlineData(TrafficLightState.WaitConfirm, "wait_confirm")]
     [InlineData(TrafficLightState.Success, "success")]
     [InlineData(TrafficLightState.Error, "error")]
-    public void ToSerialCommand_ReturnsExpectedCommand(TrafficLightState state, string expectedCommand)
+    public void ToCommandString_ReturnsExpectedCommand(TrafficLightState state, string expectedCommand)
     {
-        Assert.Equal(expectedCommand, state.ToSerialCommand());
+        Assert.Equal(expectedCommand, state.ToCommandString());
     }
 }

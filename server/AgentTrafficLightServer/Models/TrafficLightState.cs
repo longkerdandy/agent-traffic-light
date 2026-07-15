@@ -16,17 +16,17 @@ public enum TrafficLightState
 }
 
 /// <summary>
-/// Extensions for converting <see cref="TrafficLightState"/> values to serial commands.
+/// Extensions for converting <see cref="TrafficLightState"/> values to firmware commands.
 /// </summary>
 public static class TrafficLightStateExtensions
 {
     /// <summary>
-    /// Maps a traffic-light state to the newline-terminated serial command understood by the firmware.
+    /// Maps a traffic-light state to the command string understood by the firmware.
     /// </summary>
     /// <param name="state">The state to convert.</param>
-    /// <returns>The serial command string.</returns>
+    /// <returns>The firmware command string.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="state"/> is not supported.</exception>
-    public static string ToSerialCommand(this TrafficLightState state) => state switch
+    public static string ToCommandString(this TrafficLightState state) => state switch
     {
         TrafficLightState.Off => "off",
         TrafficLightState.Idle => "idle",

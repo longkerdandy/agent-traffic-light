@@ -8,7 +8,7 @@ public sealed class BleOptions
     /// <summary>
     /// The configuration section name used in appsettings.json.
     /// </summary>
-    public const string SectionName = "TrafficLight:Ble";
+    public const string SectionName = "Ble";
 
     /// <summary>
     /// Gets or sets the BLE device MAC address, e.g. "9C:CC:01:65:6E:72".

@@ -22,7 +22,6 @@
     <Using Include="Xunit" />
     <Using Include="AgentTrafficLight.Server.Models" />
     <Using Include="AgentTrafficLight.Server.Services" />
-    <Using Include="AgentTrafficLight.Server.Tests.Fakes" />
   </ItemGroup>
 
   <ItemGroup>

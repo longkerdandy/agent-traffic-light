@@ -1,9 +1,9 @@
 using System.Globalization;
+using AgentTrafficLight.Server.Configuration;
+using AgentTrafficLight.Server.Models;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
-using AgentTrafficLight.Server.Configuration;
-using AgentTrafficLight.Server.Models;
 
 namespace AgentTrafficLight.Server.Services;
 
@@ -55,7 +55,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
                 return;
             }
 
-            var json = $"{{\"status\":\"{state.ToSerialCommand()}\"}}";
+            var json = $"{{\"status\":\"{state.ToCommandString()}\"}}";
             var writer = new DataWriter();
             writer.WriteString(json);
             var buffer = writer.DetachBuffer();
