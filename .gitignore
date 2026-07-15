@@ -10,6 +10,9 @@ venv/
 .env.*
 !.env.example
 
+# MCP local config (contains secrets)
+.kimi-code/.mcp.json
+
 # Logs
 *.log
 logs/

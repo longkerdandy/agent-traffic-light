@@ -48,6 +48,19 @@ dotnet test --no-build --configuration Release
 
 Release builds treat warnings as errors (`TreatWarningsAsErrors` is enabled in Release).
 
+## 1.5 Context7 MCP
+
+This project includes a [Context7](https://context7.com) MCP server configuration for fetching up-to-date library documentation.
+
+A local `.kimi-code/.mcp.json` is present (gitignored) with the Context7 API key. If you need to recreate it, copy the tracked template:
+
+```bash
+cp .kimi-code/.mcp.json.example .kimi-code/.mcp.json
+# Replace YOUR_CONTEXT7_API_KEY_HERE with your Context7 API key
+```
+
+Do not commit `.kimi-code/.mcp.json` — it contains a secret.
+
 ## 2. Hardware Reference
 
 ### 2.1 Connection
