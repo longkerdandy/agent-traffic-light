@@ -37,3 +37,4 @@ obj/
 out/
 publish/
 artifacts/
+.pio/
