@@ -19,6 +19,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
     private readonly ILogger<BleTrafficLightController> _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private BluetoothLEDevice? _device;
+    private GattSession? _session;
     private GattCharacteristic? _characteristic;
     private bool _disposed;
 
@@ -89,14 +90,12 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
     private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
     {
-        if (_device is { ConnectionStatus: BluetoothConnectionStatus.Connected } && _characteristic != null)
+        if (_session is { SessionStatus: GattSessionStatus.Active } && _characteristic != null)
         {
             return;
         }
 
-        _device?.Dispose();
-        _device = null;
-        _characteristic = null;
+        DisposeConnection();
 
         _device = await GetDeviceAsync(cancellationToken).ConfigureAwait(false);
 
@@ -107,44 +106,110 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
         _logger.LogInformation("BLE device object obtained for {Address}", _options.DeviceAddress);
 
-        await WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+        _session = await GattSession.FromDeviceIdAsync(_device.BluetoothDeviceId)
+            .AsTask(cancellationToken)
+            .ConfigureAwait(false);
 
-        const int maxAttempts = 3;
+        if (_session == null)
+        {
+            throw new InvalidOperationException("Failed to create GATT session.");
+        }
+
+        if (!_session.CanMaintainConnection)
+        {
+            throw new InvalidOperationException("Device does not support GATT sessions.");
+        }
+
+        var tcs = new TaskCompletionSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(10));
+
+        TypedEventHandler<GattSession, GattSessionStatusChangedEventArgs> handler = (sender, args) =>
+        {
+            _logger.LogDebug(
+                "GATT session status changed to {Status} with error {Error}",
+                args.Status,
+                args.Error);
+
+            if (args.Status == GattSessionStatus.Active)
+            {
+                tcs.TrySetResult();
+            }
+        };
+
+        _session.SessionStatusChanged += handler;
+        try
+        {
+            _session.MaintainConnection = true;
+
+            var service = await GetServiceAsync(cancellationToken).ConfigureAwait(false);
+            _characteristic = await GetCharacteristicAsync(service, cancellationToken).ConfigureAwait(false);
+
+            // The actual connection may only be established after requesting information
+            // from the device, so wait for the GATT session to become active.
+            await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+            _logger.LogInformation("BLE GATT session active");
+        }
+        finally
+        {
+            _session.SessionStatusChanged -= handler;
+        }
+    }
+
+    private async Task<GattDeviceService> GetServiceAsync(CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 5;
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            var serviceResult = await _device.GetGattServicesForUuidAsync(
+            var result = await _device!.GetGattServicesForUuidAsync(
                     new Guid(_options.ServiceUuid),
                     BluetoothCacheMode.Uncached)
                 .AsTask(cancellationToken)
                 .ConfigureAwait(false);
 
-            if (serviceResult.Status == GattCommunicationStatus.Success && serviceResult.Services.Count > 0)
+            _logger.LogDebug(
+                "BLE service discovery attempt {Attempt}: {Status}",
+                attempt,
+                result.Status);
+
+            if (result.Status == GattCommunicationStatus.Success && result.Services.Count > 0)
             {
-                var service = serviceResult.Services[0];
-                var characteristicResult = await service.GetCharacteristicsForUuidAsync(
-                        new Guid(_options.CharacteristicUuid),
-                        BluetoothCacheMode.Uncached)
-                    .AsTask(cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (characteristicResult.Status == GattCommunicationStatus.Success && characteristicResult.Characteristics.Count > 0)
-                {
-                    _characteristic = characteristicResult.Characteristics[0];
-                    _logger.LogInformation("BLE GATT characteristic ready");
-                    return;
-                }
-
-                _logger.LogWarning(
-                    "BLE characteristic discovery attempt {Attempt} failed with status {Status}",
-                    attempt,
-                    characteristicResult.Status);
+                return result.Services[0];
             }
-            else
+
+            if (result.Status == GattCommunicationStatus.Unreachable && attempt < maxAttempts)
             {
-                _logger.LogWarning(
-                    "BLE service discovery attempt {Attempt} failed with status {Status}",
-                    attempt,
-                    serviceResult.Status);
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
+            throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found: {result.Status}.");
+        }
+
+        throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
+    }
+
+    private async Task<GattCharacteristic> GetCharacteristicAsync(
+        GattDeviceService service,
+        CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 3;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            var result = await service.GetCharacteristicsForUuidAsync(
+                    new Guid(_options.CharacteristicUuid),
+                    BluetoothCacheMode.Uncached)
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
+
+            _logger.LogDebug(
+                "BLE characteristic discovery attempt {Attempt}: {Status}",
+                attempt,
+                result.Status);
+
+            if (result.Status == GattCommunicationStatus.Success && result.Characteristics.Count > 0)
+            {
+                return result.Characteristics[0];
             }
 
             if (attempt < maxAttempts)
@@ -153,50 +218,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
             }
         }
 
-        throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
-    }
-
-    private async Task WaitForConnectionAsync(CancellationToken cancellationToken)
-    {
-        if (_device == null)
-        {
-            return;
-        }
-
-        if (_device.ConnectionStatus == BluetoothConnectionStatus.Connected)
-        {
-            _logger.LogInformation("BLE device already connected");
-            return;
-        }
-
-        _logger.LogInformation("Waiting for BLE device to connect...");
-
-        var tcs = new TaskCompletionSource();
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(TimeSpan.FromSeconds(5));
-
-        TypedEventHandler<BluetoothLEDevice, object?> handler = (sender, _) =>
-        {
-            if (sender is { ConnectionStatus: BluetoothConnectionStatus.Connected })
-            {
-                tcs.TrySetResult();
-            }
-        };
-
-        _device.ConnectionStatusChanged += handler;
-        try
-        {
-            await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
-            _logger.LogInformation("BLE device connected");
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogWarning("Timed out waiting for BLE device connection status");
-        }
-        finally
-        {
-            _device.ConnectionStatusChanged -= handler;
-        }
+        throw new InvalidOperationException($"BLE characteristic {_options.CharacteristicUuid} was not found.");
     }
 
     private async Task<BluetoothLEDevice?> GetDeviceAsync(CancellationToken cancellationToken)
@@ -264,6 +286,15 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         return value;
     }
 
+    private void DisposeConnection()
+    {
+        _characteristic = null;
+        _session?.Dispose();
+        _session = null;
+        _device?.Dispose();
+        _device = null;
+    }
+
     /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
@@ -273,7 +304,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         }
 
         _disposed = true;
-        _device?.Dispose();
+        DisposeConnection();
         _lock.Dispose();
         return ValueTask.CompletedTask;
     }
