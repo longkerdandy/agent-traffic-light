@@ -40,13 +40,22 @@ public sealed class TestHarnessHostedService : BackgroundService
         Console.WriteLine("Agent Traffic Light Test Harness");
         Console.WriteLine("Commands: idle thinking ai busy wait_confirm success error off demo quit");
 
-        if (Console.IsInputRedirected)
+        await _controller.ConnectAsync(stoppingToken).ConfigureAwait(false);
+
+        try
         {
-            await RunRedirectedLoopAsync(stoppingToken).ConfigureAwait(false);
+            if (Console.IsInputRedirected)
+            {
+                await RunRedirectedLoopAsync(stoppingToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await RunInteractiveLoopAsync(stoppingToken).ConfigureAwait(false);
+            }
         }
-        else
+        finally
         {
-            await RunInteractiveLoopAsync(stoppingToken).ConfigureAwait(false);
+            await _controller.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
         }
     }
 
