@@ -3,6 +3,7 @@ using AgentTrafficLight.Server.Configuration;
 using AgentTrafficLight.Server.Models;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Devices.Enumeration;
 using Windows.Storage.Streams;
 
 namespace AgentTrafficLight.Server.Services;
@@ -96,43 +97,108 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         _device = null;
         _characteristic = null;
 
-        var address = ParseMacAddress(_options.DeviceAddress);
-        _logger.LogInformation("Connecting to BLE device {Address}", _options.DeviceAddress);
-
-        _device = await BluetoothLEDevice.FromBluetoothAddressAsync(address)
-            .AsTask(cancellationToken)
-            .ConfigureAwait(false);
+        _device = await GetDeviceAsync(cancellationToken).ConfigureAwait(false);
 
         if (_device == null)
         {
             throw new InvalidOperationException($"BLE device {_options.DeviceAddress} was not found.");
         }
 
-        var serviceResult = await _device.GetGattServicesForUuidAsync(
-                new Guid(_options.ServiceUuid),
-                BluetoothCacheMode.Uncached)
-            .AsTask(cancellationToken)
-            .ConfigureAwait(false);
+        _logger.LogInformation("BLE device object obtained for {Address}", _options.DeviceAddress);
 
-        if (serviceResult.Status != GattCommunicationStatus.Success || serviceResult.Services.Count == 0)
+        const int maxAttempts = 3;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
+            var serviceResult = await _device.GetGattServicesForUuidAsync(
+                    new Guid(_options.ServiceUuid),
+                    BluetoothCacheMode.Uncached)
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (serviceResult.Status == GattCommunicationStatus.Success && serviceResult.Services.Count > 0)
+            {
+                var service = serviceResult.Services[0];
+                var characteristicResult = await service.GetCharacteristicsForUuidAsync(
+                        new Guid(_options.CharacteristicUuid),
+                        BluetoothCacheMode.Uncached)
+                    .AsTask(cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (characteristicResult.Status == GattCommunicationStatus.Success && characteristicResult.Characteristics.Count > 0)
+                {
+                    _characteristic = characteristicResult.Characteristics[0];
+                    _logger.LogInformation("BLE GATT characteristic ready");
+                    return;
+                }
+
+                _logger.LogWarning(
+                    "BLE characteristic discovery attempt {Attempt} failed with status {Status}",
+                    attempt,
+                    characteristicResult.Status);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "BLE service discovery attempt {Attempt} failed with status {Status}",
+                    attempt,
+                    serviceResult.Status);
+            }
+
+            if (attempt < maxAttempts)
+            {
+                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            }
         }
 
-        var service = serviceResult.Services[0];
-        var characteristicResult = await service.GetCharacteristicsForUuidAsync(
-                new Guid(_options.CharacteristicUuid),
-                BluetoothCacheMode.Uncached)
-            .AsTask(cancellationToken)
-            .ConfigureAwait(false);
+        throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
+    }
 
-        if (characteristicResult.Status != GattCommunicationStatus.Success || characteristicResult.Characteristics.Count == 0)
+    private async Task<BluetoothLEDevice?> GetDeviceAsync(CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(_options.DeviceAddress))
         {
-            throw new InvalidOperationException($"BLE characteristic {_options.CharacteristicUuid} was not found.");
+            var address = ParseMacAddress(_options.DeviceAddress);
+            _logger.LogInformation("Looking up BLE device by address {Address}", _options.DeviceAddress);
+
+            var selector = BluetoothLEDevice.GetDeviceSelectorFromBluetoothAddress(address);
+            var devices = await DeviceInformation.FindAllAsync(selector)
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (devices.Count > 0)
+            {
+                return await BluetoothLEDevice.FromIdAsync(devices[0].Id)
+                    .AsTask(cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
-        _characteristic = characteristicResult.Characteristics[0];
-        _logger.LogInformation("BLE device connected");
+        if (!string.IsNullOrEmpty(_options.DeviceName))
+        {
+            _logger.LogInformation("Looking up BLE device by name {Name}", _options.DeviceName);
+
+            var selector = BluetoothLEDevice.GetDeviceSelectorFromDeviceName(_options.DeviceName);
+            var devices = await DeviceInformation.FindAllAsync(selector)
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (devices.Count > 0)
+            {
+                return await BluetoothLEDevice.FromIdAsync(devices[0].Id)
+                    .AsTask(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(_options.DeviceAddress))
+        {
+            _logger.LogInformation("Falling back to FromBluetoothAddressAsync for {Address}", _options.DeviceAddress);
+            return await BluetoothLEDevice.FromBluetoothAddressAsync(ParseMacAddress(_options.DeviceAddress))
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return null;
     }
 
     private static ulong ParseMacAddress(string address)
