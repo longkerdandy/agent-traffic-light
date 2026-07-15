@@ -1,45 +1,33 @@
-/*
-  ESP32-C3 Codex 三色红绿灯控制程序
-
-  硬件连接：
-  - 红灯：GPIO0
-  - 黄灯：GPIO2
-  - 绿灯：GPIO1
-
-  串口协议：
-  以 115200 波特率发送一行字符串，支持：
-  idle
-  thinking
-  ai
-  success
-  busy
-  wait_confirm
-  confirm
-  waiting
-  wait
-  error
-  off
-
-  兼容旧版命令：
-  writing -> ai
-  running -> busy
-  done    -> success
-*/
+/**
+ * AgentCore-Light v1 firmware for ESP32-C3.
+ *
+ * Drives a three-color (red/yellow/green) traffic-light via PWM LEDs and
+ * accepts state commands over USB serial or BLE.
+ *
+ * Actual wiring (verified on the delivered board):
+ *   - Red LED    -> GPIO21
+ *   - Yellow LED -> GPIO2
+ *   - Green LED  -> GPIO20
+ *
+ * The original .ino comment listed GPIO0/2/1, but the working hardware uses
+ * GPIO21/2/20. Always change the three #defines below if the wiring changes.
+ */
 
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
+#include <BLESecurity.h>
 #include <BLEUtils.h>
 
-// 如果你的灯板是高电平点亮，把这里改成 1。
+// Set to 1 if the LED board is active-high.
 #define LED_ACTIVE_HIGH 0
 
-// GPIO 修改集中放这里，后续换线只需要改这三个定义。
+// LED GPIOs. Update these when the hardware layout changes.
 #define RED_LED_PIN 21
 #define YELLOW_LED_PIN 2
 #define GREEN_LED_PIN 20
 
-// 每个灯独立使用一个 PWM 通道，限制最大占空比以降低 GPIO 电流。
+// Independent PWM channels for each LED.
 const uint8_t RED_LED_CHANNEL = 0;
 const uint8_t YELLOW_LED_CHANNEL = 1;
 const uint8_t GREEN_LED_CHANNEL = 2;
@@ -47,9 +35,9 @@ const uint8_t GREEN_LED_CHANNEL = 2;
 const uint32_t LED_PWM_FREQ = 1000;
 const uint8_t LED_PWM_RESOLUTION = 8;
 const uint8_t LED_PWM_MAX = (1 << LED_PWM_RESOLUTION) - 1;
-const uint8_t LED_PWM_LIMIT = 140;       // 约 55% 占空比
-const uint8_t LED_PWM_SOFT = 84;         // 约 33% 占空比
-const uint8_t LED_PWM_TRAIL = 28;        // 柔和拖尾亮度
+const uint8_t LED_PWM_LIMIT = 140;  // ~55% duty cycle
+const uint8_t LED_PWM_SOFT = 84;    // ~33% duty cycle
+const uint8_t LED_PWM_TRAIL = 28;   // soft trail brightness
 const uint8_t LED_BREATH_MIN = 6;
 
 const unsigned long IDLE_BREATH_STEP_MS = 14;
@@ -63,21 +51,21 @@ const char *BLE_DEVICE_NAME = "AgentCore-Light";
 const char *BLE_SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0";
 const char *BLE_CHARACTERISTIC_UUID = "12345678-1234-5678-1234-56789abcdef1";
 
-enum LightState {
-  STATE_IDLE,
-  STATE_THINKING,
-  STATE_AI,
-  STATE_BUSY,
-  STATE_SUCCESS,
-  STATE_WAIT_CONFIRM,
-  STATE_CONFIRM,
-  STATE_WAITING,
-  STATE_WAIT,
-  STATE_ERROR,
-  STATE_OFF
+enum class LightState {
+  Idle,
+  Thinking,
+  Ai,
+  Busy,
+  Success,
+  WaitConfirm,
+  Confirm,
+  Waiting,
+  Wait,
+  Error,
+  Off
 };
 
-LightState currentState = STATE_IDLE;
+LightState currentState = LightState::Idle;
 String serialBuffer;
 BLEServer *bleServer = nullptr;
 
@@ -115,8 +103,7 @@ void setLight(bool red, bool yellow, bool green) {
   setLightLevels(
     red ? LED_PWM_LIMIT : 0,
     yellow ? LED_PWM_LIMIT : 0,
-    green ? LED_PWM_LIMIT : 0
-  );
+    green ? LED_PWM_LIMIT : 0);
 }
 
 void resetEffectState() {
@@ -134,36 +121,37 @@ void enterState(LightState newState) {
   setLight(false, false, false);
 }
 
-bool setStatus(String status) {
-  status.trim();
-  status.toLowerCase();
+bool setStatus(const String &status) {
+  String lowered = status;
+  lowered.trim();
+  lowered.toLowerCase();
 
-  if (status.length() == 0) {
+  if (lowered.length() == 0) {
     return false;
   }
 
-  if (status == "idle") {
-    enterState(STATE_IDLE);
-  } else if (status == "thinking") {
-    enterState(STATE_THINKING);
-  } else if (status == "ai" || status == "writing") {
-    enterState(STATE_AI);
-  } else if (status == "busy" || status == "running") {
-    enterState(STATE_BUSY);
-  } else if (status == "success" || status == "done") {
-    enterState(STATE_SUCCESS);
-  } else if (status == "wait_confirm") {
-    enterState(STATE_WAIT_CONFIRM);
-  } else if (status == "confirm") {
-    enterState(STATE_CONFIRM);
-  } else if (status == "waiting") {
-    enterState(STATE_WAITING);
-  } else if (status == "wait") {
-    enterState(STATE_WAIT);
-  } else if (status == "error") {
-    enterState(STATE_ERROR);
-  } else if (status == "off") {
-    enterState(STATE_OFF);
+  if (lowered == "idle") {
+    enterState(LightState::Idle);
+  } else if (lowered == "thinking") {
+    enterState(LightState::Thinking);
+  } else if (lowered == "ai" || lowered == "writing") {
+    enterState(LightState::Ai);
+  } else if (lowered == "busy" || lowered == "running") {
+    enterState(LightState::Busy);
+  } else if (lowered == "success" || lowered == "done") {
+    enterState(LightState::Success);
+  } else if (lowered == "wait_confirm") {
+    enterState(LightState::WaitConfirm);
+  } else if (lowered == "confirm") {
+    enterState(LightState::Confirm);
+  } else if (lowered == "waiting") {
+    enterState(LightState::Waiting);
+  } else if (lowered == "wait") {
+    enterState(LightState::Wait);
+  } else if (lowered == "error") {
+    enterState(LightState::Error);
+  } else if (lowered == "off") {
+    enterState(LightState::Off);
   } else {
     return false;
   }
@@ -171,44 +159,83 @@ bool setStatus(String status) {
   return true;
 }
 
+/**
+ * Extracts the string value of a given key from a small JSON payload.
+ *
+ * Supports:
+ *   - double-quoted and single-quoted keys/values
+ *   - unquoted values
+ *   - escaped characters inside quoted values
+ */
 String extractJsonStringValue(const String &json, const char *key) {
-  String pattern = "\"";
-  pattern += key;
-  pattern += "\"";
+  const size_t keyLen = strlen(key);
 
-  int keyIndex = json.indexOf(pattern);
-  if (keyIndex < 0) {
-    return "";
-  }
-
-  int colonIndex = json.indexOf(':', keyIndex + pattern.length());
-  if (colonIndex < 0) {
-    return "";
-  }
-
-  int valueStart = colonIndex + 1;
-  while (valueStart < json.length() && isspace(static_cast<unsigned char>(json[valueStart]))) {
-    valueStart++;
-  }
-
-  if (valueStart >= json.length() || json[valueStart] != '"') {
-    return "";
-  }
-
-  valueStart++;
-  String value = "";
-
-  for (int i = valueStart; i < json.length(); ++i) {
-    char c = json[i];
-    if (c == '\\' && i + 1 < json.length()) {
-      i++;
-      value += json[i];
+  for (size_t i = 0; i + keyLen < json.length(); ++i) {
+    // Locate the key, allowing leading whitespace.
+    if (isspace(static_cast<unsigned char>(json[i]))) {
       continue;
     }
-    if (c == '"') {
-      return value;
+
+    char quote = json[i];
+    if (quote != '\"' && quote != '\'') {
+      continue;
     }
-    value += c;
+
+    if (json.substring(i + 1, i + 1 + keyLen) != key) {
+      continue;
+    }
+
+    size_t keyEnd = i + 1 + keyLen;
+    if (keyEnd >= json.length() || json[keyEnd] != quote) {
+      continue;
+    }
+
+    // Find the colon after the key.
+    size_t colonIndex = keyEnd + 1;
+    while (colonIndex < json.length() && isspace(static_cast<unsigned char>(json[colonIndex]))) {
+      colonIndex++;
+    }
+    if (colonIndex >= json.length() || json[colonIndex] != ':') {
+      return "";
+    }
+
+    // Find the value start.
+    size_t valueStart = colonIndex + 1;
+    while (valueStart < json.length() && isspace(static_cast<unsigned char>(json[valueStart]))) {
+      valueStart++;
+    }
+    if (valueStart >= json.length()) {
+      return "";
+    }
+
+    char valueQuote = json[valueStart];
+    if (valueQuote == '\"' || valueQuote == '\'') {
+      // Quoted value.
+      String value = "";
+      for (size_t j = valueStart + 1; j < json.length(); ++j) {
+        char c = json[j];
+        if (c == '\\' && j + 1 < json.length()) {
+          value += json[j + 1];
+          j++;
+          continue;
+        }
+        if (c == valueQuote) {
+          return value;
+        }
+        value += c;
+      }
+      return "";
+    }
+
+    // Unquoted value: read until comma, brace, or whitespace.
+    size_t valueEnd = valueStart;
+    while (valueEnd < json.length()
+           && json[valueEnd] != ','
+           && json[valueEnd] != '}'
+           && !isspace(static_cast<unsigned char>(json[valueEnd]))) {
+      valueEnd++;
+    }
+    return json.substring(valueStart, valueEnd);
   }
 
   return "";
@@ -284,24 +311,38 @@ class LightBleCharacteristicCallbacks : public BLECharacteristicCallbacks {
 void setupBle() {
   BLEDevice::init(BLE_DEVICE_NAME);
 
-  // Enable Just Works pairing so Windows 10/11 can authenticate with the device.
+  // Enable Just Works pairing so Windows 10/11 can authenticate.
   BLEDevice::setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
-  BLEDevice::setSecurityCallbacks(new LightBleSecurityCallbacks());
+
+  static LightBleSecurityCallbacks securityCallbacks;
+  BLEDevice::setSecurityCallbacks(&securityCallbacks);
+
+  {
+    BLESecurity security;
+    security.setAuthenticationMode(ESP_LE_AUTH_REQ_SC_ONLY);
+    security.setCapability(ESP_IO_CAP_NONE);
+    security.setInitEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
+    security.setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
+  }
 
   bleServer = BLEDevice::createServer();
-  bleServer->setCallbacks(new LightBleServerCallbacks());
+
+  static LightBleServerCallbacks serverCallbacks;
+  bleServer->setCallbacks(&serverCallbacks);
 
   BLEService *service = bleServer->createService(BLE_SERVICE_UUID);
   BLECharacteristic *statusCharacteristic = service->createCharacteristic(
     BLE_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
-  );
+    BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
-  statusCharacteristic->setCallbacks(new LightBleCharacteristicCallbacks());
+  static LightBleCharacteristicCallbacks characteristicCallbacks;
+  statusCharacteristic->setCallbacks(&characteristicCallbacks);
   service->start();
 
   BLEAdvertising *advertising = bleServer->getAdvertising();
   advertising->addServiceUUID(BLE_SERVICE_UUID);
+  advertising->setMinPreferred(0x06);
+  advertising->setMaxPreferred(0x12);
   advertising->start();
 
   Serial.print("BLE advertising as: ");
@@ -388,72 +429,73 @@ void updateIdleBreathing() {
 
 void updateEffect() {
   switch (currentState) {
-    case STATE_IDLE:
+    case LightState::Idle:
       updateIdleBreathing();
       break;
 
-    case STATE_THINKING:
+    case LightState::Thinking:
       if (effectFrameDue(THINKING_CHASE_INTERVAL_MS)) {
         showThinkingChaseFrame();
       }
       break;
 
-    case STATE_AI:
+    case LightState::Ai:
       if (effectFrameDue(AI_CHASE_INTERVAL_MS)) {
         showAiChaseFrame();
       }
       break;
 
-    case STATE_BUSY:
+    case LightState::Busy:
       if (effectFrameDue(BUSY_BLINK_INTERVAL_MS)) {
         blinkOn = !blinkOn;
         setLightLevels(0, blinkOn ? LED_PWM_SOFT : 0, 0);
       }
       break;
 
-    case STATE_SUCCESS:
+    case LightState::Success:
       setLightLevels(0, 0, LED_PWM_LIMIT);
       if (millis() - stateStartMs >= SUCCESS_HOLD_MS) {
-        enterState(STATE_IDLE);
+        enterState(LightState::Idle);
       }
       break;
 
-    case STATE_WAIT_CONFIRM:
-    case STATE_CONFIRM:
-    case STATE_WAITING:
-    case STATE_WAIT:
+    case LightState::WaitConfirm:
+    case LightState::Confirm:
+    case LightState::Waiting:
+    case LightState::Wait:
       setLightLevels(0, LED_PWM_LIMIT, 0);
       break;
 
-    case STATE_ERROR:
+    case LightState::Error:
       if (effectFrameDue(ERROR_BLINK_INTERVAL_MS)) {
         blinkOn = !blinkOn;
         setLightLevels(blinkOn ? LED_PWM_LIMIT : 0, 0, 0);
       }
       break;
 
-    case STATE_OFF:
+    case LightState::Off:
       setLightLevels(0, 0, 0);
       break;
   }
 }
 
-void handleCommand(String command) {
-  command.trim();
-  command.toLowerCase();
+void handleCommand(const String &command) {
+  String lowered = command;
+  lowered.trim();
+  lowered.toLowerCase();
 
-  if (command.length() == 0) {
+  if (lowered.length() == 0) {
     return;
   }
 
-  if (!setStatus(command)) {
+  if (!setStatus(lowered)) {
     Serial.print("Unknown state: ");
-    Serial.println(command);
+    Serial.println(lowered);
     return;
   }
 
   Serial.print("State changed to: ");
-  Serial.println(command);
+  Serial.println(lowered);
 }
 
 void readSerialCommands() {
@@ -467,6 +509,13 @@ void readSerialCommands() {
       }
     } else if (serialBuffer.length() < 31) {
       serialBuffer += c;
+    } else {
+      // Command too long; drop the rest and warn once per line.
+      static bool overflowWarned = false;
+      if (!overflowWarned) {
+        Serial.println("Serial command too long; truncated.");
+        overflowWarned = true;
+      }
     }
   }
 }
@@ -484,7 +533,7 @@ void setup() {
   setLightLevels(0, 0, 0);
   setupBle();
 
-  enterState(STATE_IDLE);
+  enterState(LightState::Idle);
 
   Serial.println("ESP32-C3 traffic light ready.");
   Serial.println("Commands: idle, thinking, ai, success, busy, wait_confirm, confirm, waiting, wait, error, off");
