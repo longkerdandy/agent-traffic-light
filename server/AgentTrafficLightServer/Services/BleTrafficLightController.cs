@@ -157,32 +157,47 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
     private async Task<GattDeviceService> GetServiceAsync(CancellationToken cancellationToken)
     {
-        const int maxAttempts = 5;
+        const int maxAttempts = 10;
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            var result = await _device!.GetGattServicesForUuidAsync(
-                    new Guid(_options.ServiceUuid),
-                    BluetoothCacheMode.Uncached)
-                .AsTask(cancellationToken)
-                .ConfigureAwait(false);
-
-            _logger.LogDebug(
-                "BLE service discovery attempt {Attempt}: {Status}",
-                attempt,
-                result.Status);
-
-            if (result.Status == GattCommunicationStatus.Success && result.Services.Count > 0)
+            try
             {
-                return result.Services[0];
+                var result = await _device!.GetGattServicesForUuidAsync(
+                        new Guid(_options.ServiceUuid),
+                        BluetoothCacheMode.Uncached)
+                    .AsTask(cancellationToken)
+                    .ConfigureAwait(false);
+
+                _logger.LogDebug(
+                    "BLE service discovery attempt {Attempt}: {Status}",
+                    attempt,
+                    result.Status);
+
+                if (result.Status == GattCommunicationStatus.Success && result.Services.Count > 0)
+                {
+                    return result.Services[0];
+                }
+
+                if (attempt < maxAttempts)
+                {
+                    _logger.LogWarning(
+                        "BLE service discovery failed with {Status}, retrying...",
+                        result.Status);
+                    await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found: {result.Status}.");
+                }
             }
-
-            if (result.Status == GattCommunicationStatus.Unreachable && attempt < maxAttempts)
+            catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x80070016) && attempt < maxAttempts)
             {
+                _logger.LogWarning(
+                    ex,
+                    "BLE service discovery returned ERROR_NOT_READY on attempt {Attempt}, retrying...",
+                    attempt);
                 await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
-                continue;
             }
-
-            throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found: {result.Status}.");
         }
 
         throw new InvalidOperationException($"BLE service {_options.ServiceUuid} was not found.");
@@ -222,16 +237,22 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
     private async Task<BluetoothLEDevice?> GetDeviceAsync(CancellationToken cancellationToken)
     {
-        // Prefer already-enumerated devices so we can connect without scanning.
-        var device = await GetEnumeratedDeviceAsync(cancellationToken).ConfigureAwait(false);
-        if (device != null)
+        // Always scan first. Windows desktop apps often cannot connect to an
+        // unpaired peripheral unless a live advertisement watcher has recently
+        // seen the device. Relying on stale DeviceInformation entries frequently
+        // results in ERROR_NOT_READY (0x80070016) when accessing GATT services.
+        var scanned = await ScanForDeviceAsync(cancellationToken).ConfigureAwait(false);
+        if (scanned.HasValue)
         {
-            return device;
+            return await BluetoothLEDevice.FromBluetoothAddressAsync(
+                    scanned.Value.Address,
+                    scanned.Value.AddressType)
+                .AsTask(cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        // Fall back to active scanning. Windows desktop apps often need a live
-        // advertisement watcher before they can connect to an unpaired peripheral.
-        return await ScanForDeviceAsync(cancellationToken).ConfigureAwait(false);
+        // Fall back to already-enumerated devices.
+        return await GetEnumeratedDeviceAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<BluetoothLEDevice?> GetEnumeratedDeviceAsync(CancellationToken cancellationToken)
@@ -274,11 +295,11 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         return null;
     }
 
-    private async Task<BluetoothLEDevice?> ScanForDeviceAsync(CancellationToken cancellationToken)
+    private async Task<(ulong Address, BluetoothAddressType AddressType)?> ScanForDeviceAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting BLE advertisement scan");
 
-        var tcs = new TaskCompletionSource<ulong?>();
+        var tcs = new TaskCompletionSource<(ulong Address, BluetoothAddressType AddressType)?>();
         var watcher = new BluetoothLEAdvertisementWatcher
         {
             ScanningMode = BluetoothLEScanningMode.Active,
@@ -305,10 +326,11 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
                 if (MatchesOptions(args))
                 {
                     _logger.LogInformation(
-                        "Found matching BLE device {Address} ({LocalName})",
+                        "Found matching BLE device {Address} ({LocalName}, type: {AddressType})",
                         address,
-                        args.Advertisement.LocalName);
-                    tcs.TrySetResult(args.BluetoothAddress);
+                        args.Advertisement.LocalName,
+                        args.BluetoothAddressType);
+                    tcs.TrySetResult((args.BluetoothAddress, args.BluetoothAddressType));
                 }
             };
 
@@ -321,15 +343,13 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         {
             watcher.Start();
 
-            var address = await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
-            if (!address.HasValue)
+            var found = await tcs.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+            if (!found.HasValue)
             {
                 return null;
             }
 
-            return await BluetoothLEDevice.FromBluetoothAddressAsync(address.Value)
-                .AsTask(cancellationToken)
-                .ConfigureAwait(false);
+            return found.Value;
         }
         catch (OperationCanceledException)
         {
