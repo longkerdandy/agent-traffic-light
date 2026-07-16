@@ -3,7 +3,7 @@ namespace AgentTrafficLight.Server.Drivers;
 /// <summary>
 /// Canonical traffic-light commands sent to AgentCore-Light compatible hardware.
 /// </summary>
-public enum TrafficLightCommand
+public enum AgentCoreLightCommand
 {
     /// <summary>
     /// All LEDs off.
@@ -47,9 +47,9 @@ public enum TrafficLightCommand
 }
 
 /// <summary>
-/// Extensions for converting <see cref="TrafficLightCommand"/> values to firmware commands.
+/// Extensions for converting <see cref="AgentCoreLightCommand"/> values to firmware commands.
 /// </summary>
-public static class TrafficLightCommandExtensions
+public static class AgentCoreLightCommandExtensions
 {
     /// <summary>
     /// Maps a traffic-light command to the command string understood by the firmware.
@@ -57,16 +57,16 @@ public static class TrafficLightCommandExtensions
     /// <param name="command">The command to convert.</param>
     /// <returns>The firmware command string.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="command"/> is not supported.</exception>
-    public static string ToCommandString(this TrafficLightCommand command) => command switch
+    public static string ToCommandString(this AgentCoreLightCommand command) => command switch
     {
-        TrafficLightCommand.Off => "off",
-        TrafficLightCommand.Idle => "idle",
-        TrafficLightCommand.Thinking => "thinking",
-        TrafficLightCommand.Ai => "ai",
-        TrafficLightCommand.Busy => "busy",
-        TrafficLightCommand.WaitConfirm => "wait_confirm",
-        TrafficLightCommand.Success => "success",
-        TrafficLightCommand.Error => "error",
+        AgentCoreLightCommand.Off => "off",
+        AgentCoreLightCommand.Idle => "idle",
+        AgentCoreLightCommand.Thinking => "thinking",
+        AgentCoreLightCommand.Ai => "ai",
+        AgentCoreLightCommand.Busy => "busy",
+        AgentCoreLightCommand.WaitConfirm => "wait_confirm",
+        AgentCoreLightCommand.Success => "success",
+        AgentCoreLightCommand.Error => "error",
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null)
     };
 }

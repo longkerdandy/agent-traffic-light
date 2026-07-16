@@ -14,10 +14,10 @@ namespace AgentTrafficLight.Server.Drivers;
 /// BLE driver for AgentCore-Light compatible hardware.
 /// Writes JSON command payloads to the vendor GATT characteristic.
 /// </summary>
-public sealed class BleHardwareDriver : IAgentCoreLightDriver
+public sealed class BleAgentCoreLightDriver : IAgentCoreLightDriver
 {
     private readonly BleOptions _options;
-    private readonly ILogger<BleHardwareDriver> _logger;
+    private readonly ILogger<BleAgentCoreLightDriver> _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private BluetoothLEDevice? _device;
     private GattSession? _session;
@@ -26,11 +26,11 @@ public sealed class BleHardwareDriver : IAgentCoreLightDriver
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BleHardwareDriver"/> class.
+    /// Initializes a new instance of the <see cref="BleAgentCoreLightDriver"/> class.
     /// </summary>
     /// <param name="options">BLE connection options.</param>
     /// <param name="logger">The logger.</param>
-    public BleHardwareDriver(IOptions<BleOptions> options, ILogger<BleHardwareDriver> logger)
+    public BleAgentCoreLightDriver(IOptions<BleOptions> options, ILogger<BleAgentCoreLightDriver> logger)
     {
         _options = options.Value;
         _logger = logger;
@@ -125,7 +125,7 @@ public sealed class BleHardwareDriver : IAgentCoreLightDriver
     }
 
     /// <inheritdoc />
-    public async Task SendCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken = default)
+    public async Task SendCommandAsync(AgentCoreLightCommand command, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -174,7 +174,7 @@ public sealed class BleHardwareDriver : IAgentCoreLightDriver
         _lock.Dispose();
     }
 
-    private async Task<bool> TryWriteCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken)
+    private async Task<bool> TryWriteCommandAsync(AgentCoreLightCommand command, CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try

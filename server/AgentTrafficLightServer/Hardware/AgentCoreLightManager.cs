@@ -7,10 +7,11 @@ namespace AgentTrafficLight.Server.Hardware;
 
 /// <summary>
 /// Hardware manager for the AgentCore-Light traffic light.
-/// Subscribes to agent lifecycle events and maps them to traffic-light commands
-/// sent through the bound BLE driver, but only for the current master agent.
+/// Connects to the device when the host starts, subscribes to agent lifecycle events,
+/// and maps them to traffic-light commands sent through the bound driver, but only
+/// for the current master agent.
 /// </summary>
-public sealed class AgentCoreLightManager : IAgentEventSubscriber
+public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedService
 {
     private readonly IAgentStore _store;
     private readonly IAgentCoreLightDriver _driver;
@@ -27,6 +28,33 @@ public sealed class AgentCoreLightManager : IAgentEventSubscriber
         _store = store;
         _driver = driver;
         _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _driver.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("AgentCore-Light connected at startup");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AgentCore-Light could not be connected at startup; will retry on next command");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _driver.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AgentCore-Light disconnect failed during shutdown");
+        }
     }
 
     /// <inheritdoc />
@@ -50,25 +78,20 @@ public sealed class AgentCoreLightManager : IAgentEventSubscriber
             agentEvent,
             command);
 
-        if (!_driver.IsConnected)
-        {
-            await _driver.ConnectAsync(cancellationToken).ConfigureAwait(false);
-        }
-
         await _driver.SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    private static TrafficLightCommand MapEventToCommand(AgentEvent agentEvent) => agentEvent switch
+    private static AgentCoreLightCommand MapEventToCommand(AgentEvent agentEvent) => agentEvent switch
     {
-        AgentEvent.SessionStart => TrafficLightCommand.Idle,
-        AgentEvent.UserPromptSubmit => TrafficLightCommand.Thinking,
-        AgentEvent.PreToolUse => TrafficLightCommand.Thinking,
-        AgentEvent.PostToolUse => TrafficLightCommand.Thinking,
-        AgentEvent.PermissionRequest => TrafficLightCommand.WaitConfirm,
-        AgentEvent.Stop => TrafficLightCommand.Success,
-        AgentEvent.StopFailure => TrafficLightCommand.Error,
-        AgentEvent.Disconnect => TrafficLightCommand.Off,
-        AgentEvent.SessionEnd => TrafficLightCommand.Off,
-        _ => TrafficLightCommand.Off
+        AgentEvent.SessionStart => AgentCoreLightCommand.Idle,
+        AgentEvent.UserPromptSubmit => AgentCoreLightCommand.Thinking,
+        AgentEvent.PreToolUse => AgentCoreLightCommand.Busy,
+        AgentEvent.PostToolUse => AgentCoreLightCommand.Ai,
+        AgentEvent.PermissionRequest => AgentCoreLightCommand.WaitConfirm,
+        AgentEvent.Stop => AgentCoreLightCommand.Success,
+        AgentEvent.StopFailure => AgentCoreLightCommand.Error,
+        AgentEvent.Disconnect => AgentCoreLightCommand.Off,
+        AgentEvent.SessionEnd => AgentCoreLightCommand.Off,
+        _ => AgentCoreLightCommand.Off
     };
 }

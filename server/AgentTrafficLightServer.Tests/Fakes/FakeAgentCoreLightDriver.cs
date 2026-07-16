@@ -7,7 +7,7 @@ namespace AgentTrafficLight.Server.Tests.Fakes;
 /// </summary>
 public sealed class FakeAgentCoreLightDriver : IAgentCoreLightDriver
 {
-    private readonly List<TrafficLightCommand> _commands = [];
+    private readonly List<AgentCoreLightCommand> _commands = [];
 
     /// <inheritdoc />
     public bool IsConnected { get; private set; }
@@ -15,11 +15,32 @@ public sealed class FakeAgentCoreLightDriver : IAgentCoreLightDriver
     /// <summary>
     /// Gets the list of commands sent to the driver.
     /// </summary>
-    public IReadOnlyList<TrafficLightCommand> Commands => _commands.AsReadOnly();
+    public IReadOnlyList<AgentCoreLightCommand> Commands => _commands.AsReadOnly();
+
+    /// <summary>
+    /// Gets or sets the exception to throw from <see cref="ConnectAsync"/>.
+    /// </summary>
+    public Exception? ConnectException { get; set; }
+
+    /// <summary>
+    /// Gets the number of times <see cref="ConnectAsync"/> has been called.
+    /// </summary>
+    public int ConnectCount { get; private set; }
+
+    /// <summary>
+    /// Gets the number of times <see cref="DisconnectAsync"/> has been called.
+    /// </summary>
+    public int DisconnectCount { get; private set; }
 
     /// <inheritdoc />
     public Task ConnectAsync(CancellationToken cancellationToken = default)
     {
+        ConnectCount++;
+        if (ConnectException != null)
+        {
+            return Task.FromException(ConnectException);
+        }
+
         IsConnected = true;
         return Task.CompletedTask;
     }
@@ -27,12 +48,13 @@ public sealed class FakeAgentCoreLightDriver : IAgentCoreLightDriver
     /// <inheritdoc />
     public Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
+        DisconnectCount++;
         IsConnected = false;
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task SendCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken = default)
+    public Task SendCommandAsync(AgentCoreLightCommand command, CancellationToken cancellationToken = default)
     {
         _commands.Add(command);
         return Task.CompletedTask;

@@ -27,9 +27,10 @@ public static class Program
             builder.Configuration.GetSection(BleOptions.SectionName));
 
         builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
-        builder.Services.AddSingleton<IAgentCoreLightDriver, BleHardwareDriver>();
-        builder.Services.AddSingleton<IAgentEventSubscriber, AgentCoreLightManager>();
-        builder.Services.AddSingleton<IAgentEventSubscriber, NullTrafficLightManager>();
+        builder.Services.AddSingleton<IAgentCoreLightDriver, BleAgentCoreLightDriver>();
+        builder.Services.AddSingleton<AgentCoreLightManager>();
+        builder.Services.AddSingleton<IAgentEventSubscriber>(sp => sp.GetRequiredService<AgentCoreLightManager>());
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<AgentCoreLightManager>());
         builder.Services.AddSingleton<AgentEventDispatcher>();
         builder.Services.AddSingleton<AgentLifecycleService>();
 
