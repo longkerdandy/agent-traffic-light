@@ -8,10 +8,9 @@ venv/
 # Environment / secrets
 .env
 .env.*
-!.env.example
 
-# MCP local config (contains secrets)
-.kimi-code/.mcp.json
+# Kimi Code local settings (per-engineer, may contain secrets)
+.kimi-code/
 
 # Logs
 *.log
