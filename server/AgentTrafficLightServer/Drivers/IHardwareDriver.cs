@@ -1,19 +1,12 @@
-using AgentTrafficLight.Server.Models;
-
-namespace AgentTrafficLight.Server.Services;
+namespace AgentTrafficLight.Server.Drivers;
 
 /// <summary>
-/// Controls the AgentCore-Light traffic-light hardware state.
+/// Abstraction for a physical traffic-light driver.
 /// </summary>
-public interface ITrafficLightController
+public interface IHardwareDriver : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the current traffic-light state.
-    /// </summary>
-    AgentState CurrentState { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the controller is connected to the hardware.
+    /// Gets a value indicating whether the driver is connected to the hardware.
     /// </summary>
     bool IsConnected { get; }
 
@@ -32,10 +25,10 @@ public interface ITrafficLightController
     Task DisconnectAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets the traffic-light state and writes the corresponding command to the hardware.
+    /// Sends a traffic-light command to the hardware.
     /// </summary>
-    /// <param name="state">The desired state.</param>
+    /// <param name="command">The command to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task SetStateAsync(AgentState state, CancellationToken cancellationToken = default);
+    Task SendCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken = default);
 }

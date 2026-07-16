@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using AgentTrafficLight.Server.Models;
 
-namespace AgentTrafficLight.Server.Services;
+namespace AgentTrafficLight.Server.Stores;
 
 /// <summary>
 /// Thread-safe in-memory store for active agent sessions.
@@ -42,14 +42,14 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
     }
 
     /// <inheritdoc />
-    public Agent Upsert(string agentId, string agentName, string? cwd, AgentState state, DateTimeOffset now)
+    public Agent Upsert(string agentId, string agentName, string? cwd, AgentEvent agentEvent, DateTimeOffset now)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_lock)
         {
             var agent = GetOrCreateAgent(agentId, agentName, cwd, now);
-            agent.State = state;
+            agent.Event = agentEvent;
             RescheduleTimer(agentId);
             return agent;
         }
@@ -99,7 +99,7 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
 
             if (agent != null)
             {
-                agent.IsController = false;
+                agent.IsMaster = false;
             }
 
             if (_timers.Remove(agentId, out var timer))
@@ -123,7 +123,7 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
     }
 
     /// <inheritdoc />
-    public bool TrySetController(string agentId)
+    public bool TrySetMaster(string agentId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -134,46 +134,46 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
                 return false;
             }
 
-            if (agent.IsController)
+            if (agent.IsMaster)
             {
                 return true;
             }
 
-            if (_agents.Values.Any(a => a.IsController))
+            if (_agents.Values.Any(a => a.IsMaster))
             {
                 return false;
             }
 
-            agent.IsController = true;
+            agent.IsMaster = true;
             return true;
         }
     }
 
     /// <inheritdoc />
-    public bool TryReleaseController(string agentId)
+    public bool TryReleaseMaster(string agentId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_lock)
         {
-            if (!_agents.TryGetValue(agentId, out var agent) || !agent.IsController)
+            if (!_agents.TryGetValue(agentId, out var agent) || !agent.IsMaster)
             {
                 return false;
             }
 
-            agent.IsController = false;
+            agent.IsMaster = false;
             return true;
         }
     }
 
     /// <inheritdoc />
-    public string? GetControllerAgentId()
+    public string? GetMasterAgentId()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_lock)
         {
-            return _agents.Values.FirstOrDefault(a => a.IsController)?.AgentId;
+            return _agents.Values.FirstOrDefault(a => a.IsMaster)?.AgentId;
         }
     }
 
@@ -208,9 +208,9 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
                 AgentId = agentId,
                 AgentName = agentName,
                 Cwd = cwd,
-                State = AgentState.Off,
+                Event = AgentEvent.Disconnect,
                 LastSeen = now,
-                IsController = false
+                IsMaster = false
             };
             _agents[agentId] = agent;
         }
@@ -253,7 +253,7 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
 
             if (_agents.Remove(agentId, out var agent) && agent != null)
             {
-                agent.IsController = false;
+                agent.IsMaster = false;
             }
         }
 

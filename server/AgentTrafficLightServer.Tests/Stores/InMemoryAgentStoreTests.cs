@@ -1,7 +1,7 @@
 using AgentTrafficLight.Server.Models;
-using AgentTrafficLight.Server.Services;
+using AgentTrafficLight.Server.Stores;
 
-namespace AgentTrafficLight.Server.Tests.Services;
+namespace AgentTrafficLight.Server.Tests.Stores;
 
 public sealed class InMemoryAgentStoreTests : IDisposable
 {
@@ -17,28 +17,28 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     {
         var now = DateTimeOffset.UtcNow;
 
-        var agent = _store.Upsert("agent-1", "kimi", "/tmp", AgentState.Idle, now);
+        var agent = _store.Upsert("agent-1", "kimi", "/tmp", AgentEvent.SessionStart, now);
 
         Assert.Equal("agent-1", agent.AgentId);
         Assert.Equal("kimi", agent.AgentName);
         Assert.Equal("/tmp", agent.Cwd);
-        Assert.Equal(AgentState.Idle, agent.State);
+        Assert.Equal(AgentEvent.SessionStart, agent.Event);
         Assert.Equal(now, agent.LastSeen);
-        Assert.False(agent.IsController);
+        Assert.False(agent.IsMaster);
     }
 
     [Fact]
     public void Upsert_UpdatesExistingAgent()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", "/tmp", AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", "/tmp", AgentEvent.SessionStart, now);
 
         var later = now.AddSeconds(10);
-        var updated = _store.Upsert("agent-1", "claude", "/other", AgentState.Busy, later);
+        var updated = _store.Upsert("agent-1", "claude", "/other", AgentEvent.PreToolUse, later);
 
         Assert.Equal("claude", updated.AgentName);
         Assert.Equal("/other", updated.Cwd);
-        Assert.Equal(AgentState.Busy, updated.State);
+        Assert.Equal(AgentEvent.PreToolUse, updated.Event);
         Assert.Equal(later, updated.LastSeen);
     }
 
@@ -52,23 +52,23 @@ public sealed class InMemoryAgentStoreTests : IDisposable
         Assert.Equal("agent-1", agent.AgentId);
         Assert.Equal("kimi", agent.AgentName);
         Assert.Equal("/tmp", agent.Cwd);
-        Assert.Equal(AgentState.Off, agent.State);
+        Assert.Equal(AgentEvent.Disconnect, agent.Event);
         Assert.Equal(now, agent.LastSeen);
-        Assert.False(agent.IsController);
+        Assert.False(agent.IsMaster);
     }
 
     [Fact]
     public void Touch_PreservesStateAndUpdatesLastSeen_WhenExists()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", "/tmp", AgentState.Busy, now);
+        _store.Upsert("agent-1", "kimi", "/tmp", AgentEvent.PreToolUse, now);
 
         var later = now.AddSeconds(10);
         var touched = _store.Touch("agent-1", "claude", "/other", later);
 
         Assert.Equal("claude", touched.AgentName);
         Assert.Equal("/other", touched.Cwd);
-        Assert.Equal(AgentState.Busy, touched.State);
+        Assert.Equal(AgentEvent.PreToolUse, touched.Event);
         Assert.Equal(later, touched.LastSeen);
     }
 
@@ -76,7 +76,7 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     public async Task Touch_ResetsTtl()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         await Task.Delay(TimeSpan.FromMilliseconds(30));
         _store.Touch("agent-1", "kimi", null, now.AddMilliseconds(30));
@@ -92,7 +92,7 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     public void TryGet_ReturnsAgent_WhenExists()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         var found = _store.TryGet("agent-1", out var agent);
 
@@ -114,7 +114,7 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     public void TryRemove_RemovesExistingAgent()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         var removed = _store.TryRemove("agent-1", out var agent);
 
@@ -136,8 +136,8 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     public void GetSnapshot_ReturnsAllActiveAgents()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
-        _store.Upsert("agent-2", "claude", null, AgentState.Busy, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
+        _store.Upsert("agent-2", "claude", null, AgentEvent.PreToolUse, now);
 
         var snapshot = _store.GetSnapshot();
 
@@ -145,51 +145,51 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     }
 
     [Fact]
-    public void TrySetController_Succeeds_WhenControlIsFree()
+    public void TrySetMaster_Succeeds_WhenControlIsFree()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
-        var claimed = _store.TrySetController("agent-1");
+        var claimed = _store.TrySetMaster("agent-1");
 
         Assert.True(claimed);
-        Assert.Equal("agent-1", _store.GetControllerAgentId());
-        Assert.True(_store.TryGet("agent-1", out var agent) && agent!.IsController);
+        Assert.Equal("agent-1", _store.GetMasterAgentId());
+        Assert.True(_store.TryGet("agent-1", out var agent) && agent!.IsMaster);
     }
 
     [Fact]
-    public void TrySetController_Fails_WhenAnotherAgentControls()
+    public void TrySetMaster_Fails_WhenAnotherAgentControls()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
-        _store.Upsert("agent-2", "claude", null, AgentState.Busy, now);
-        _store.TrySetController("agent-1");
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
+        _store.Upsert("agent-2", "claude", null, AgentEvent.PreToolUse, now);
+        _store.TrySetMaster("agent-1");
 
-        var claimed = _store.TrySetController("agent-2");
+        var claimed = _store.TrySetMaster("agent-2");
 
         Assert.False(claimed);
-        Assert.Equal("agent-1", _store.GetControllerAgentId());
+        Assert.Equal("agent-1", _store.GetMasterAgentId());
     }
 
     [Fact]
-    public void TryReleaseController_ReleasesControl_WhenAgentIsController()
+    public void TryReleaseMaster_ReleasesControl_WhenAgentIsMaster()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
-        _store.TrySetController("agent-1");
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
+        _store.TrySetMaster("agent-1");
 
-        var released = _store.TryReleaseController("agent-1");
+        var released = _store.TryReleaseMaster("agent-1");
 
         Assert.True(released);
-        Assert.Null(_store.GetControllerAgentId());
-        Assert.True(_store.TryGet("agent-1", out var agent) && !agent!.IsController);
+        Assert.Null(_store.GetMasterAgentId());
+        Assert.True(_store.TryGet("agent-1", out var agent) && !agent!.IsMaster);
     }
 
     [Fact]
     public async Task Timer_RemovesAgent_WhenTtlExpires()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         await Task.Delay(TimeSpan.FromMilliseconds(200));
 
@@ -200,10 +200,10 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     public async Task Timer_Resets_WhenAgentIsUpsertedAgain()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         await Task.Delay(TimeSpan.FromMilliseconds(30));
-        _store.Upsert("agent-1", "kimi", null, AgentState.Thinking, now.AddMilliseconds(30));
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.PreToolUse, now.AddMilliseconds(30));
 
         await Task.Delay(TimeSpan.FromMilliseconds(30));
         Assert.True(_store.TryGet("agent-1", out _));
@@ -213,22 +213,22 @@ public sealed class InMemoryAgentStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Timer_ReleasesController_WhenControllerAgentExpires()
+    public async Task Timer_ReleasesMaster_WhenMasterAgentExpires()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
-        _store.TrySetController("agent-1");
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
+        _store.TrySetMaster("agent-1");
 
         await Task.Delay(TimeSpan.FromMilliseconds(200));
 
-        Assert.Null(_store.GetControllerAgentId());
+        Assert.Null(_store.GetMasterAgentId());
     }
 
     [Fact]
     public void Dispose_PreventsFurtherAccess()
     {
         var now = DateTimeOffset.UtcNow;
-        _store.Upsert("agent-1", "kimi", null, AgentState.Idle, now);
+        _store.Upsert("agent-1", "kimi", null, AgentEvent.SessionStart, now);
 
         _store.Dispose();
 

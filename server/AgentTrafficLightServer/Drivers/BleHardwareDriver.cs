@@ -1,6 +1,5 @@
 using System.Globalization;
 using AgentTrafficLight.Server.Configuration;
-using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Utils;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
@@ -9,16 +8,16 @@ using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Storage.Streams;
 
-namespace AgentTrafficLight.Server.Services;
+namespace AgentTrafficLight.Server.Drivers;
 
 /// <summary>
-/// Controls the AgentCore-Light traffic-light hardware over BLE by writing
-/// JSON status payloads to the vendor GATT characteristic.
+/// BLE driver for AgentCore-Light compatible hardware.
+/// Writes JSON command payloads to the vendor GATT characteristic.
 /// </summary>
-public sealed class BleTrafficLightController : ITrafficLightController, IAsyncDisposable
+public sealed class BleHardwareDriver : IAgentCoreLightDriver
 {
     private readonly BleOptions _options;
-    private readonly ILogger<BleTrafficLightController> _logger;
+    private readonly ILogger<BleHardwareDriver> _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private BluetoothLEDevice? _device;
     private GattSession? _session;
@@ -27,18 +26,15 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BleTrafficLightController"/> class.
+    /// Initializes a new instance of the <see cref="BleHardwareDriver"/> class.
     /// </summary>
     /// <param name="options">BLE connection options.</param>
     /// <param name="logger">The logger.</param>
-    public BleTrafficLightController(IOptions<BleOptions> options, ILogger<BleTrafficLightController> logger)
+    public BleHardwareDriver(IOptions<BleOptions> options, ILogger<BleHardwareDriver> logger)
     {
         _options = options.Value;
         _logger = logger;
     }
-
-    /// <inheritdoc />
-    public AgentState CurrentState { get; private set; } = AgentState.Off;
 
     /// <inheritdoc />
     public bool IsConnected => !_disposed && _isConnected && _characteristic != null;
@@ -129,39 +125,56 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
     }
 
     /// <inheritdoc />
-    public async Task SetStateAsync(AgentState state, CancellationToken cancellationToken = default)
+    public async Task SendCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (state == CurrentState)
-        {
-            return;
-        }
 
         // Lazy reconnect: if we are not currently connected, try to connect first.
         if (!IsConnected)
         {
-            _logger.LogInformation("BLE controller is disconnected; reconnecting before writing state {State}", state);
+            _logger.LogInformation("BLE driver is disconnected; reconnecting before writing command {Command}", command);
             await ConnectAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        if (await TryWriteStateAsync(state, cancellationToken).ConfigureAwait(false))
+        if (await TryWriteCommandAsync(command, cancellationToken).ConfigureAwait(false))
         {
             return;
         }
 
         // Write failed. Drop the connection and attempt one reconnect + retry.
-        _logger.LogWarning("BLE write failed for state {State}; reconnecting and retrying once", state);
+        _logger.LogWarning("BLE write failed for command {Command}; reconnecting and retrying once", command);
         DisposeConnection();
         await ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-        if (!await TryWriteStateAsync(state, cancellationToken).ConfigureAwait(false))
+        if (!await TryWriteCommandAsync(command, cancellationToken).ConfigureAwait(false))
         {
-            throw new IOException($"Failed to write BLE state {state} after reconnecting.");
+            throw new IOException($"Failed to write BLE command {command} after reconnecting.");
         }
     }
 
-    private async Task<bool> TryWriteStateAsync(AgentState state, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        await _lock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            DisposeConnection();
+        }
+        finally
+        {
+            _lock.Release();
+        }
+
+        _lock.Dispose();
+    }
+
+    private async Task<bool> TryWriteCommandAsync(TrafficLightCommand command, CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -171,7 +184,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
                 return false;
             }
 
-            var json = $"{{\"status\":\"{state.ToCommandString()}\"}}";
+            var json = $"{{\"status\":\"{command.ToCommandString()}\"}}";
             var writer = new DataWriter();
             writer.WriteString(json);
             var buffer = writer.DetachBuffer();
@@ -186,12 +199,11 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
 
             if (result == GattCommunicationStatus.Success)
             {
-                CurrentState = state;
-                _logger.LogInformation("Traffic light state changed to {State} ({Json})", state, json);
+                _logger.LogInformation("Traffic light command sent: {Command} ({Json})", command, json);
                 return true;
             }
 
-            _logger.LogWarning("Failed to write BLE state {State}: {Status}", state, result);
+            _logger.LogWarning("Failed to write BLE command {Command}: {Status}", command, result);
             _isConnected = false;
             _characteristic = null;
             return false;
@@ -456,27 +468,5 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         _session = null;
         _device?.Dispose();
         _device = null;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        await _lock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            DisposeConnection();
-        }
-        finally
-        {
-            _lock.Release();
-        }
-
-        _lock.Dispose();
     }
 }

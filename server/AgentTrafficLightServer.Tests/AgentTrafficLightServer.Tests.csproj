@@ -20,8 +20,12 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="AgentTrafficLight.Server.Drivers" />
+    <Using Include="AgentTrafficLight.Server.Events" />
+    <Using Include="AgentTrafficLight.Server.Hardware" />
     <Using Include="AgentTrafficLight.Server.Models" />
     <Using Include="AgentTrafficLight.Server.Services" />
+    <Using Include="AgentTrafficLight.Server.Stores" />
   </ItemGroup>
 
   <ItemGroup>

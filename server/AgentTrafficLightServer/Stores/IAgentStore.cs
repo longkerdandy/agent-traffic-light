@@ -1,26 +1,26 @@
 using AgentTrafficLight.Server.Models;
 
-namespace AgentTrafficLight.Server.Services;
+namespace AgentTrafficLight.Server.Stores;
 
 /// <summary>
-/// Stores active agent sessions and tracks which agent holds exclusive control of the traffic light.
+/// Stores active agent sessions and tracks which agent is currently the master.
 /// </summary>
 public interface IAgentStore
 {
     /// <summary>
-    /// Creates or updates an agent session and sets its requested state.
+    /// Creates or updates an agent session and records its latest event.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
     /// <param name="agentName">The agent name, for example "kimi", "claude", or "codex".</param>
     /// <param name="cwd">The working directory, if any.</param>
-    /// <param name="state">The requested state.</param>
+    /// <param name="agentEvent">The latest agent lifecycle event.</param>
     /// <param name="now">The current time.</param>
     /// <returns>The created or updated agent.</returns>
-    Agent Upsert(string agentId, string agentName, string? cwd, AgentState state, DateTimeOffset now);
+    Agent Upsert(string agentId, string agentName, string? cwd, AgentEvent agentEvent, DateTimeOffset now);
 
     /// <summary>
-    /// Refreshes an agent session without changing its requested state.
-    /// Creates the agent with the default <see cref="AgentState.Off"/> state if it does not exist.
+    /// Refreshes an agent session without changing its latest event.
+    /// Creates the agent with the default <see cref="AgentEvent.Disconnect"/> event if it does not exist.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
     /// <param name="agentName">The agent name, for example "kimi", "claude", or "codex".</param>
@@ -52,23 +52,23 @@ public interface IAgentStore
     IReadOnlyList<Agent> GetSnapshot();
 
     /// <summary>
-    /// Attempts to make an agent the exclusive controller of the traffic light.
-    /// Returns <see langword="false"/> if the agent does not exist or if another agent already holds control.
+    /// Attempts to make an agent the master.
+    /// Returns <see langword="false"/> if the agent does not exist or if another agent is already the master.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
-    /// <returns><see langword="true"/> if this agent is now the controller.</returns>
-    bool TrySetController(string agentId);
+    /// <returns><see langword="true"/> if this agent is now the master.</returns>
+    bool TrySetMaster(string agentId);
 
     /// <summary>
-    /// Releases exclusive control if the specified agent is the controller.
+    /// Releases the master role if the specified agent is the master.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
-    /// <returns><see langword="true"/> if control was released.</returns>
-    bool TryReleaseController(string agentId);
+    /// <returns><see langword="true"/> if the master role was released.</returns>
+    bool TryReleaseMaster(string agentId);
 
     /// <summary>
-    /// Gets the identifier of the current controller, if any.
+    /// Gets the identifier of the current master, if any.
     /// </summary>
-    /// <returns>The controller agent identifier, or <see langword="null"/>.</returns>
-    string? GetControllerAgentId();
+    /// <returns>The master agent identifier, or <see langword="null"/>.</returns>
+    string? GetMasterAgentId();
 }

@@ -21,9 +21,9 @@ public sealed class Agent
     public string? Cwd { get; set; }
 
     /// <summary>
-    /// Gets or sets the requested traffic-light state.
+    /// Gets or sets the latest agent lifecycle event.
     /// </summary>
-    public AgentState State { get; set; }
+    public AgentEvent Event { get; set; }
 
     /// <summary>
     /// Gets or sets the last time the agent was seen.
@@ -31,7 +31,7 @@ public sealed class Agent
     public DateTimeOffset LastSeen { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether this agent currently holds exclusive control of the traffic light.
+    /// Gets or sets a value indicating whether this agent is currently the master agent.
     /// </summary>
-    public bool IsController { get; set; }
+    public bool IsMaster { get; set; }
 }

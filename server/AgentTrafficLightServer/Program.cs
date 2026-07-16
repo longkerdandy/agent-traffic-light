@@ -1,6 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using AgentTrafficLight.Server.Configuration;
+using AgentTrafficLight.Server.Drivers;
+using AgentTrafficLight.Server.Events;
+using AgentTrafficLight.Server.Hardware;
 using AgentTrafficLight.Server.Services;
+using AgentTrafficLight.Server.Stores;
 
 namespace AgentTrafficLight.Server;
 
@@ -22,8 +26,12 @@ public static class Program
         builder.Services.Configure<BleOptions>(
             builder.Configuration.GetSection(BleOptions.SectionName));
 
-        builder.Services.AddSingleton<ITrafficLightController, BleTrafficLightController>();
-        builder.Services.AddHostedService<TestHarnessHostedService>();
+        builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
+        builder.Services.AddSingleton<IAgentCoreLightDriver, BleHardwareDriver>();
+        builder.Services.AddSingleton<IAgentEventSubscriber, AgentCoreLightManager>();
+        builder.Services.AddSingleton<IAgentEventSubscriber, NullTrafficLightManager>();
+        builder.Services.AddSingleton<AgentEventDispatcher>();
+        builder.Services.AddSingleton<AgentLifecycleService>();
 
         var host = builder.Build();
         await host.RunAsync().ConfigureAwait(false);
