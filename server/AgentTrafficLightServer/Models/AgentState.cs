@@ -3,7 +3,7 @@ namespace AgentTrafficLight.Server.Models;
 /// <summary>
 /// Canonical traffic-light states sent to the AgentCore-Light hardware.
 /// </summary>
-public enum TrafficLightState
+public enum AgentState
 {
     Off,         // All LEDs off.
     Idle,        // Green breathing effect.
@@ -16,9 +16,9 @@ public enum TrafficLightState
 }
 
 /// <summary>
-/// Extensions for converting <see cref="TrafficLightState"/> values to firmware commands.
+/// Extensions for converting <see cref="AgentState"/> values to firmware commands.
 /// </summary>
-public static class TrafficLightStateExtensions
+public static class AgentStateExtensions
 {
     /// <summary>
     /// Maps a traffic-light state to the command string understood by the firmware.
@@ -26,16 +26,16 @@ public static class TrafficLightStateExtensions
     /// <param name="state">The state to convert.</param>
     /// <returns>The firmware command string.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="state"/> is not supported.</exception>
-    public static string ToCommandString(this TrafficLightState state) => state switch
+    public static string ToCommandString(this AgentState state) => state switch
     {
-        TrafficLightState.Off => "off",
-        TrafficLightState.Idle => "idle",
-        TrafficLightState.Thinking => "thinking",
-        TrafficLightState.Ai => "ai",
-        TrafficLightState.Busy => "busy",
-        TrafficLightState.WaitConfirm => "wait_confirm",
-        TrafficLightState.Success => "success",
-        TrafficLightState.Error => "error",
+        AgentState.Off => "off",
+        AgentState.Idle => "idle",
+        AgentState.Thinking => "thinking",
+        AgentState.Ai => "ai",
+        AgentState.Busy => "busy",
+        AgentState.WaitConfirm => "wait_confirm",
+        AgentState.Success => "success",
+        AgentState.Error => "error",
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
     };
 }

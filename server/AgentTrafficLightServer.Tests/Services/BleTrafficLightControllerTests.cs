@@ -11,7 +11,7 @@ public sealed class BleTrafficLightControllerTests
     {
         var controller = CreateController();
 
-        Assert.Equal(TrafficLightState.Off, controller.CurrentState);
+        Assert.Equal(AgentState.Off, controller.CurrentState);
         Assert.False(controller.IsConnected);
     }
 
@@ -24,7 +24,7 @@ public sealed class BleTrafficLightControllerTests
         if (OperatingSystem.IsWindows())
         {
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => controller.SetStateAsync(TrafficLightState.Busy));
+                () => controller.SetStateAsync(AgentState.Busy));
 
             Assert.Contains("was not found", exception.Message, StringComparison.Ordinal);
         }
@@ -32,7 +32,7 @@ public sealed class BleTrafficLightControllerTests
         {
             // The Windows Runtime BLE APIs are not available on Linux/WSL.
             await Assert.ThrowsAsync<DllNotFoundException>(
-                () => controller.SetStateAsync(TrafficLightState.Busy));
+                () => controller.SetStateAsync(AgentState.Busy));
         }
     }
 
@@ -43,9 +43,9 @@ public sealed class BleTrafficLightControllerTests
 
         // CurrentState is already Off; requesting Off again should short-circuit
         // before checking whether the controller is connected.
-        await controller.SetStateAsync(TrafficLightState.Off);
+        await controller.SetStateAsync(AgentState.Off);
 
-        Assert.Equal(TrafficLightState.Off, controller.CurrentState);
+        Assert.Equal(AgentState.Off, controller.CurrentState);
     }
 
     private static BleTrafficLightController CreateController()

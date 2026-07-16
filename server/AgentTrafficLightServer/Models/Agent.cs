@@ -11,9 +11,9 @@ public sealed class Agent
     public string AgentId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the agent kind, for example "kimi", "claude", or "codex".
+    /// Gets or sets the agent name, for example "kimi", "claude", or "codex".
     /// </summary>
-    public string AgentKind { get; set; } = string.Empty;
+    public string AgentName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the working directory associated with the agent, if any.
@@ -23,7 +23,7 @@ public sealed class Agent
     /// <summary>
     /// Gets or sets the requested traffic-light state.
     /// </summary>
-    public TrafficLightState State { get; set; }
+    public AgentState State { get; set; }
 
     /// <summary>
     /// Gets or sets the last time the agent was seen.

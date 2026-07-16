@@ -38,7 +38,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
     }
 
     /// <inheritdoc />
-    public TrafficLightState CurrentState { get; private set; } = TrafficLightState.Off;
+    public AgentState CurrentState { get; private set; } = AgentState.Off;
 
     /// <inheritdoc />
     public bool IsConnected => !_disposed && _isConnected && _characteristic != null;
@@ -129,7 +129,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
     }
 
     /// <inheritdoc />
-    public async Task SetStateAsync(TrafficLightState state, CancellationToken cancellationToken = default)
+    public async Task SetStateAsync(AgentState state, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -161,7 +161,7 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         }
     }
 
-    private async Task<bool> TryWriteStateAsync(TrafficLightState state, CancellationToken cancellationToken)
+    private async Task<bool> TryWriteStateAsync(AgentState state, CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try

@@ -16,7 +16,7 @@ public interface IAgentStore
     /// <param name="state">The requested state.</param>
     /// <param name="now">The current time.</param>
     /// <returns>The created or updated agent.</returns>
-    Agent Upsert(string agentId, string agentName, string? cwd, TrafficLightState state, DateTimeOffset now);
+    Agent Upsert(string agentId, string agentName, string? cwd, AgentState state, DateTimeOffset now);
 
     /// <summary>
     /// Attempts to retrieve an active agent.

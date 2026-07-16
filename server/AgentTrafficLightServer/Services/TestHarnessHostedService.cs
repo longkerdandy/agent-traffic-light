@@ -7,14 +7,14 @@ namespace AgentTrafficLight.Server.Services;
 /// </summary>
 public sealed class TestHarnessHostedService : BackgroundService
 {
-    private static readonly TrafficLightState[] s_demoStates =
+    private static readonly AgentState[] s_demoStates =
     {
-        TrafficLightState.Idle,
-        TrafficLightState.Thinking,
-        TrafficLightState.Busy,
-        TrafficLightState.Success,
-        TrafficLightState.Error,
-        TrafficLightState.Off
+        AgentState.Idle,
+        AgentState.Thinking,
+        AgentState.Busy,
+        AgentState.Success,
+        AgentState.Error,
+        AgentState.Off
     };
 
     private readonly ITrafficLightController _controller;
@@ -176,20 +176,20 @@ public sealed class TestHarnessHostedService : BackgroundService
         }
     }
 
-    private static bool TryParseState(string text, out TrafficLightState state)
+    private static bool TryParseState(string text, out AgentState state)
     {
         var normalized = text.Trim().ToLowerInvariant();
         state = normalized switch
         {
-            "idle" => TrafficLightState.Idle,
-            "thinking" => TrafficLightState.Thinking,
-            "ai" => TrafficLightState.Ai,
-            "busy" => TrafficLightState.Busy,
-            "wait_confirm" => TrafficLightState.WaitConfirm,
-            "success" => TrafficLightState.Success,
-            "error" => TrafficLightState.Error,
-            "off" => TrafficLightState.Off,
-            _ => TrafficLightState.Off
+            "idle" => AgentState.Idle,
+            "thinking" => AgentState.Thinking,
+            "ai" => AgentState.Ai,
+            "busy" => AgentState.Busy,
+            "wait_confirm" => AgentState.WaitConfirm,
+            "success" => AgentState.Success,
+            "error" => AgentState.Error,
+            "off" => AgentState.Off,
+            _ => AgentState.Off
         };
 
         return normalized is "idle" or "thinking" or "ai" or "busy" or "wait_confirm" or "success" or "error" or "off";

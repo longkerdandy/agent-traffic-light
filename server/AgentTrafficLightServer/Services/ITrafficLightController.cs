@@ -10,7 +10,7 @@ public interface ITrafficLightController
     /// <summary>
     /// Gets the current traffic-light state.
     /// </summary>
-    TrafficLightState CurrentState { get; }
+    AgentState CurrentState { get; }
 
     /// <summary>
     /// Gets a value indicating whether the controller is connected to the hardware.
@@ -37,5 +37,5 @@ public interface ITrafficLightController
     /// <param name="state">The desired state.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task SetStateAsync(TrafficLightState state, CancellationToken cancellationToken = default);
+    Task SetStateAsync(AgentState state, CancellationToken cancellationToken = default);
 }
