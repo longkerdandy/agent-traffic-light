@@ -19,6 +19,17 @@ public interface IAgentStore
     Agent Upsert(string agentId, string agentName, string? cwd, AgentState state, DateTimeOffset now);
 
     /// <summary>
+    /// Refreshes an agent session without changing its requested state.
+    /// Creates the agent with the default <see cref="AgentState.Off"/> state if it does not exist.
+    /// </summary>
+    /// <param name="agentId">The agent identifier.</param>
+    /// <param name="agentName">The agent name, for example "kimi", "claude", or "codex".</param>
+    /// <param name="cwd">The working directory, if any.</param>
+    /// <param name="now">The current time.</param>
+    /// <returns>The refreshed or created agent.</returns>
+    Agent Touch(string agentId, string agentName, string? cwd, DateTimeOffset now);
+
+    /// <summary>
     /// Attempts to retrieve an active agent.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
@@ -42,11 +53,11 @@ public interface IAgentStore
 
     /// <summary>
     /// Attempts to make an agent the exclusive controller of the traffic light.
+    /// Returns <see langword="false"/> if the agent does not exist or if another agent already holds control.
     /// </summary>
     /// <param name="agentId">The agent identifier.</param>
-    /// <param name="conflictAgentId">The identifier of the agent that already holds control, if any.</param>
     /// <returns><see langword="true"/> if this agent is now the controller.</returns>
-    bool TrySetController(string agentId, out string? conflictAgentId);
+    bool TrySetController(string agentId);
 
     /// <summary>
     /// Releases exclusive control if the specified agent is the controller.
