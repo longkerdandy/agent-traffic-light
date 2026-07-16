@@ -25,7 +25,7 @@ public interface IAgentCoreLightDriver : IAsyncDisposable
     Task DisconnectAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sends a traffic-light command to the hardware.
+    /// Sends an AgentCoreLight command to the hardware.
     /// </summary>
     /// <param name="command">The command to send.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

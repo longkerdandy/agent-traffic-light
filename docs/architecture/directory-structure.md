@@ -95,9 +95,9 @@ agent-traffic-light/
 
 | Path | Responsibility |
 |------|----------------|
-| `server/AgentTrafficLightServer` | The single .NET process that hosts the HTTP API, SSE stream, session store, state arbitration, serial output, and dashboard. |
+| `server/AgentTrafficLightServer` | The single .NET process that hosts the HTTP API, SSE stream, session store, state arbitration, hardware control, and dashboard. |
 | `server/AgentTrafficLightServer/Endpoints/` | Minimal-API route handlers grouped by feature (`/hook`, `/heartbeat`, `/api/light`, `/api/status`, `/stream`). |
-| `server/AgentTrafficLightServer/Services/` | Core business logic: session tracking, winner selection, serial port I/O, TTL sweeps. |
+| `server/AgentTrafficLightServer/Services/` | Core business logic: session tracking, state arbitration, and agent lifecycle coordination. |
 | `server/AgentTrafficLightServer/Models/` | C# records/classes for sessions, hook payloads, and API responses. |
 | `server/AgentTrafficLightServer/wwwroot/` | Static dashboard files served at `/`. |
 | `server/AgentTrafficLight.Contracts/` | Shared .NET library for DTOs and constants. Kept inside `server/` because v1.0 only the server consumes it. |

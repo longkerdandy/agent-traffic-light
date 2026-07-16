@@ -6,9 +6,9 @@ using AgentTrafficLight.Server.Stores;
 namespace AgentTrafficLight.Server.Hardware;
 
 /// <summary>
-/// Hardware manager for the AgentCore-Light traffic light.
+/// Hardware manager for the AgentCoreLight device.
 /// Connects to the device when the host starts, subscribes to agent lifecycle events,
-/// and maps them to traffic-light commands sent through the bound driver, but only
+/// and maps them to AgentCoreLight commands sent through the bound driver, but only
 /// for the current master agent.
 /// </summary>
 public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedService

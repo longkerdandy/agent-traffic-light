@@ -1,7 +1,7 @@
 /**
  * AgentCore-Light v1 firmware for ESP32-C3.
  *
- * Drives a three-color (red/yellow/green) traffic-light via PWM LEDs and
+ * Drives the AgentCoreLight device (red/yellow/green LEDs) via PWM and
  * accepts state commands over USB serial or BLE.
  *
  * Actual wiring (verified on the delivered board):
@@ -535,7 +535,7 @@ void setup() {
 
   enterState(LightState::Off);
 
-  Serial.println("ESP32-C3 traffic light ready.");
+  Serial.println("ESP32-C3 AgentCoreLight ready.");
   Serial.println("Commands: idle, thinking, ai, success, busy, wait_confirm, confirm, waiting, wait, error, off");
 }
 

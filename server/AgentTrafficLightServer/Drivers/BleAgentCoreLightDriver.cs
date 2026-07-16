@@ -199,7 +199,7 @@ public sealed class BleAgentCoreLightDriver : IAgentCoreLightDriver
 
             if (result == GattCommunicationStatus.Success)
             {
-                _logger.LogInformation("Traffic light command sent: {Command} ({Json})", command, json);
+                _logger.LogInformation("AgentCoreLight command sent: {Command} ({Json})", command, json);
                 return true;
             }
 

@@ -1,7 +1,7 @@
 namespace AgentTrafficLight.Server.Drivers;
 
 /// <summary>
-/// Canonical traffic-light commands sent to AgentCore-Light compatible hardware.
+/// Canonical AgentCoreLight commands sent to AgentCore-Light compatible hardware.
 /// </summary>
 public enum AgentCoreLightCommand
 {
@@ -52,7 +52,7 @@ public enum AgentCoreLightCommand
 public static class AgentCoreLightCommandExtensions
 {
     /// <summary>
-    /// Maps a traffic-light command to the command string understood by the firmware.
+    /// Maps an AgentCoreLight command to the command string understood by the firmware.
     /// </summary>
     /// <param name="command">The command to convert.</param>
     /// <returns>The firmware command string.</returns>

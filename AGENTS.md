@@ -1,6 +1,6 @@
 # Agent Traffic Light — AI Coding Guide
 
-This project is a multi-agent hardware bridge for the **AgentCore-Light v1** desktop RGB traffic-light device. The current implementation is a .NET control server under `server/`.
+This project is a multi-agent hardware bridge for the **AgentCoreLight v1** desktop RGB device. The current implementation is a .NET control server under `server/`.
 
 ## 1. Project Conventions
 
@@ -19,7 +19,7 @@ The solution lives at `server/agent-traffic-light.sln` and contains:
 
 | Project | Purpose |
 |---------|---------|
-| `AgentTrafficLightServer` | Main executable. Hosts the HTTP API, session arbitration, serial I/O, and dashboard. |
+| `AgentTrafficLightServer` | Main executable. Hosts the HTTP API, session arbitration, BLE hardware control, and dashboard. |
 | `AgentTrafficLight.Contracts` | Shared DTOs and constants. |
 | `AgentTrafficLightServer.Tests` | Unit and integration tests. |
 
@@ -104,9 +104,9 @@ Legacy aliases: `writing` → `ai`, `running` → `busy`, `done` → `success`.
 
 ### 2.4 Canonical Server States
 
-The server model uses these canonical states (`TrafficLightState`):
+The server model uses these canonical commands (`AgentCoreLightCommand`):
 
-| State | Serial command | Visual effect |
+| Command | Serial command | Visual effect |
 |-------|----------------|---------------|
 | `Idle` | `idle` | Green breathing |
 | `Thinking` | `thinking` | Fast red-yellow-green chase |
@@ -133,9 +133,9 @@ Implications for this project:
 
 The server is in early scaffolding:
 
-- Serial port auto-detection and writing is implemented (`Services/SerialController.cs`).
-- A command-line test harness is wired up (`TestHarnessHostedService`).
-- HTTP API, session store, state arbitration, and dashboard are **not yet implemented**.
+- BLE hardware control is implemented (`Drivers/BleAgentCoreLightDriver.cs`).
+- Agent session store, state arbitration, and event dispatch are implemented (`Stores/`, `Services/`, `Events/`).
+- HTTP API and dashboard are **not yet implemented**.
 
 Planned endpoints (see `docs/plan/v1.0-development-plan.md`):
 
