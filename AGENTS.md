@@ -131,24 +131,13 @@ Implications for this project:
 
 ## 3. Current Implementation Status
 
-The server implements the v0.3 instance API and heartbeat model:
+The server is in early scaffolding:
 
-- ASP.NET Core Minimal API hosted on `127.0.0.1:8787`.
-- In-memory instance store with TTL-based expiration (`Services/InMemoryInstanceStore.cs`).
-- Exclusive light-control arbitration: first claim wins, control released on disconnect or expiry (`Api/InstanceApi.cs`).
-- `POST /api/instances/{id}/connect`, `/disconnect`, `/events`, `/heartbeat`, `/control`.
-- `GET /api/instances`, `/api/instances/{id}`, `/api/light`.
-- TTL sweep background service (`Services/InstanceCleanupHostedService.cs`).
-- BLE hardware output via `ITrafficLightController` / `BleTrafficLightController` (Windows-only).
+- Serial port auto-detection and writing is implemented (`Services/SerialController.cs`).
+- A command-line test harness is wired up (`TestHarnessHostedService`).
+- HTTP API, session store, state arbitration, and dashboard are **not yet implemented**.
 
-Not yet implemented:
-
-- Client-side agent integrations (Kimi Code shim, heartbeat subprocess).
-- Dashboard UI and SSE stream.
-- Windows service / systemd packaging.
-- Persistent storage.
-
-Planned endpoints for v1.0 (see `docs/plan/v1.0-development-plan.md`):
+Planned endpoints (see `docs/plan/v1.0-development-plan.md`):
 
 | Endpoint | Purpose |
 |----------|---------|

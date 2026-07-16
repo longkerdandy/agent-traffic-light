@@ -1,49 +1,18 @@
-namespace AgentTrafficLight.Contracts.Models;
+namespace AgentTrafficLight.Server.Models;
 
 /// <summary>
 /// Canonical traffic-light states sent to the AgentCore-Light hardware.
 /// </summary>
 public enum TrafficLightState
 {
-    /// <summary>
-    /// All LEDs off.
-    /// </summary>
-    Off,
-
-    /// <summary>
-    /// Green breathing effect.
-    /// </summary>
-    Idle,
-
-    /// <summary>
-    /// Fast red-yellow-green chase.
-    /// </summary>
-    Thinking,
-
-    /// <summary>
-    /// Soft red-yellow-green chase.
-    /// </summary>
-    Ai,
-
-    /// <summary>
-    /// Yellow slow blink.
-    /// </summary>
-    Busy,
-
-    /// <summary>
-    /// Yellow steady while waiting for user confirmation.
-    /// </summary>
-    WaitConfirm,
-
-    /// <summary>
-    /// Green steady for 5 seconds, then returns to Idle.
-    /// </summary>
-    Success,
-
-    /// <summary>
-    /// Red fast blink.
-    /// </summary>
-    Error
+    Off,         // All LEDs off.
+    Idle,        // Green breathing effect.
+    Thinking,    // Fast red-yellow-green chase.
+    Ai,          // Soft red-yellow-green chase.
+    Busy,        // Yellow slow blink.
+    WaitConfirm, // Yellow steady while waiting for user confirmation.
+    Success,     // Green steady for 5 seconds, then returns to Idle.
+    Error        // Red fast blink.
 }
 
 /// <summary>

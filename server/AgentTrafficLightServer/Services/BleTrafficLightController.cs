@@ -1,7 +1,6 @@
-#if WINDOWS
 using System.Globalization;
-using AgentTrafficLight.Contracts.Models;
 using AgentTrafficLight.Server.Configuration;
+using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Utils;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
@@ -481,4 +480,3 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
         _lock.Dispose();
     }
 }
-#endif

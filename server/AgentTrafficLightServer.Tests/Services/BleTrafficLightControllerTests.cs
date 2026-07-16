@@ -1,6 +1,4 @@
-#if WINDOWS
 using AgentTrafficLight.Server.Configuration;
-using AgentTrafficLight.Server.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -56,4 +54,3 @@ public sealed class BleTrafficLightControllerTests
         return new BleTrafficLightController(options, NullLogger<BleTrafficLightController>.Instance);
     }
 }
-#endif

@@ -1,6 +1,4 @@
-#if WINDOWS
 using Windows.Foundation;
-#endif
 
 namespace AgentTrafficLight.Server.Utils;
 
@@ -9,12 +7,11 @@ namespace AgentTrafficLight.Server.Utils;
 /// </summary>
 public static class EventAsync
 {
-#if WINDOWS
     /// <summary>
     /// Waits for a <see cref="TypedEventHandler{TSender, TResult}"/> event that satisfies the given predicate.
     /// </summary>
-    /// <ttypeparam name="TSender">The sender type.</ttypeparam>
-    /// <ttypeparam name="TResult">The event argument type.</ttypeparam>
+    /// <typeparam name="TSender">The sender type.</typeparam>
+    /// <typeparam name="TResult">The event argument type.</typeparam>
     /// <param name="add">Action that subscribes the handler.</param>
     /// <param name="remove">Action that unsubscribes the handler.</param>
     /// <param name="predicate">Optional predicate that decides whether the event matches. Defaults to the first event.</param>
@@ -48,12 +45,11 @@ public static class EventAsync
 
         return tcs.Task;
     }
-#endif
 
     /// <summary>
     /// Waits for an <see cref="EventHandler{TEventArgs}"/> event that satisfies the given predicate.
     /// </summary>
-    /// <ttypeparam name="TEventArgs">The event argument type.</ttypeparam>
+    /// <typeparam name="TEventArgs">The event argument type.</typeparam>
     /// <param name="add">Action that subscribes the handler.</param>
     /// <param name="remove">Action that unsubscribes the handler.</param>
     /// <param name="predicate">Optional predicate that decides whether the event matches. Defaults to the first event.</param>

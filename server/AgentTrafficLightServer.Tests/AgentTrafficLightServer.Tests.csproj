@@ -5,15 +5,14 @@
     <RootNamespace>AgentTrafficLight.Server.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <TargetFramework>net10.0</TargetFramework>
-    <!-- Multi-targeting is enabled on the server project; tests run on the portable target. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <!-- NETSDK1188 is raised when running in invariant globalization mode (no ICU installed). -->
     <NoWarn>$(NoWarn);NETSDK1188;CA1707;CA1861</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
@@ -21,11 +20,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="AgentTrafficLight.Contracts.Models" />
+    <Using Include="AgentTrafficLight.Server.Models" />
     <Using Include="AgentTrafficLight.Server.Services" />
-    <Using Include="AgentTrafficLight.Server.Tests.Services" />
-    <Using Include="Microsoft.AspNetCore.Builder" />
-    <Using Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>
