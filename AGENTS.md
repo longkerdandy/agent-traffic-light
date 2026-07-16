@@ -166,7 +166,6 @@ Planned endpoints for v1.0 (see `docs/plan/v1.0-development-plan.md`):
 - **Do** run `dotnet format` and `dotnet format style` after code generation.
 - **Do** add or update tests for new server behavior.
 - **Do** keep `reference/` read-only.
-- **Do** write all comments and documentation in code and configuration files in English.
 - **Don't** introduce Node.js in the server unless explicitly required; the server is .NET.
 - **Don't** expose the server beyond `127.0.0.1` in v1.0.
 
