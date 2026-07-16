@@ -1,4 +1,4 @@
-using AgentTrafficLight.Server.Models;
+using AgentTrafficLight.Contracts.Models;
 
 namespace AgentTrafficLight.Server.Tests.Models;
 
