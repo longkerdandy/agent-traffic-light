@@ -138,13 +138,37 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
             return;
         }
 
+        // Lazy reconnect: if we are not currently connected, try to connect first.
+        if (!IsConnected)
+        {
+            _logger.LogInformation("BLE controller is disconnected; reconnecting before writing state {State}", state);
+            await ConnectAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        if (await TryWriteStateAsync(state, cancellationToken).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        // Write failed. Drop the connection and attempt one reconnect + retry.
+        _logger.LogWarning("BLE write failed for state {State}; reconnecting and retrying once", state);
+        DisposeConnection();
+        await ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+        if (!await TryWriteStateAsync(state, cancellationToken).ConfigureAwait(false))
+        {
+            throw new IOException($"Failed to write BLE state {state} after reconnecting.");
+        }
+    }
+
+    private async Task<bool> TryWriteStateAsync(TrafficLightState state, CancellationToken cancellationToken)
+    {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!_isConnected || _characteristic == null)
             {
-                throw new InvalidOperationException(
-                    "BLE controller is not connected. Call ConnectAsync before sending commands.");
+                return false;
             }
 
             var json = $"{{\"status\":\"{state.ToCommandString()}\"}}";
@@ -164,13 +188,13 @@ public sealed class BleTrafficLightController : ITrafficLightController, IAsyncD
             {
                 CurrentState = state;
                 _logger.LogInformation("Traffic light state changed to {State} ({Json})", state, json);
+                return true;
             }
-            else
-            {
-                _logger.LogWarning("Failed to write BLE state {State}: {Status}", state, result);
-                _isConnected = false;
-                _characteristic = null;
-            }
+
+            _logger.LogWarning("Failed to write BLE state {State}: {Status}", state, result);
+            _isConnected = false;
+            _characteristic = null;
+            return false;
         }
         finally
         {

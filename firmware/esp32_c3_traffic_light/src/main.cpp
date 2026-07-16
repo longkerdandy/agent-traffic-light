@@ -65,7 +65,7 @@ enum class LightState {
   Off
 };
 
-LightState currentState = LightState::Idle;
+LightState currentState = LightState::Off;
 String serialBuffer;
 BLEServer *bleServer = nullptr;
 
@@ -533,7 +533,7 @@ void setup() {
   setLightLevels(0, 0, 0);
   setupBle();
 
-  enterState(LightState::Idle);
+  enterState(LightState::Off);
 
   Serial.println("ESP32-C3 traffic light ready.");
   Serial.println("Commands: idle, thinking, ai, success, busy, wait_confirm, confirm, waiting, wait, error, off");

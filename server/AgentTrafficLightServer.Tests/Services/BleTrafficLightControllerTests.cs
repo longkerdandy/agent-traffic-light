@@ -16,14 +16,24 @@ public sealed class BleTrafficLightControllerTests
     }
 
     [Fact]
-    public async Task SetStateAsync_Throws_WhenNotConnected()
+    public async Task SetStateAsync_Throws_WhenConnectionFails()
     {
-        var controller = CreateController();
+        var options = Options.Create(new BleOptions { ScanTimeoutMs = 100 });
+        var controller = new BleTrafficLightController(options, NullLogger<BleTrafficLightController>.Instance);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => controller.SetStateAsync(TrafficLightState.Busy));
+        if (OperatingSystem.IsWindows())
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => controller.SetStateAsync(TrafficLightState.Busy));
 
-        Assert.Contains("ConnectAsync", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("was not found", exception.Message, StringComparison.Ordinal);
+        }
+        else
+        {
+            // The Windows Runtime BLE APIs are not available on Linux/WSL.
+            await Assert.ThrowsAsync<DllNotFoundException>(
+                () => controller.SetStateAsync(TrafficLightState.Busy));
+        }
     }
 
     [Fact]
