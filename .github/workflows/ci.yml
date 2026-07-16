@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -32,3 +32,22 @@ jobs:
         run: |
           dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed
           dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed style
+
+  firmware-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build firmware
+        working-directory: ./firmware/esp32_c3_traffic_light
+        run: pio run
