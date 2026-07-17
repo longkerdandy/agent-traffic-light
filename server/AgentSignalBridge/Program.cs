@@ -71,6 +71,7 @@ public sealed class Program
         builder.Services.AddHttpClient();
 
         var app = builder.Build();
+        app.UseStaticFiles();
         app.MapAgentEndpoints();
         app.MapBlazorHub();
         app.MapFallbackToPage("/_Host");

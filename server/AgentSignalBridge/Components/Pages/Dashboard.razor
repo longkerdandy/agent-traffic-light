@@ -18,29 +18,45 @@
 <main class="dashboard-main">
     <section class="panel" aria-labelledby="active-agents-heading">
         <h2 id="active-agents-heading">Active Agents</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Agent ID</th>
-                    <th>Name</th>
-                    <th>Last Event</th>
-                    <th>Master</th>
-                    <th>Last Seen</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var agent in _agents)
-                {
-                    <tr class="@GetRowClass(agent)">
-                        <td>@agent.AgentId</td>
-                        <td>@agent.AgentName</td>
-                        <td>@agent.Event</td>
-                        <td>@(agent.IsMaster ? "●" : "○")</td>
-                        <td>@agent.LastSeen.ToString("HH:mm:ss")</td>
+        @if (_agents.Count == 0)
+        {
+            <div class="empty-state">No active agents</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Agent ID</th>
+                        <th>Name</th>
+                        <th>Last Event</th>
+                        <th>Master</th>
+                        <th>Last Seen</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var agent in _agents)
+                    {
+                        <tr class="@GetRowClass(agent)">
+                            <td>@agent.AgentId</td>
+                            <td>@agent.AgentName</td>
+                            <td><span class="event-badge">@agent.Event</span></td>
+                            <td>
+                                @if (agent.IsMaster)
+                                {
+                                    <span class="status-badge master">master</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge">—</span>
+                                }
+                            </td>
+                            <td>@agent.LastSeen.ToString("HH:mm:ss")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </section>
 
     <section class="panel" aria-labelledby="active-hardware-heading">
@@ -56,14 +72,40 @@
             <tbody>
                 <tr>
                     <td>AgentCore-Light</td>
-                    <td>@Manager.LastCommand</td>
-                    <td>@_masterAgentId</td>
+                    <td>
+                        @if (Manager.LastCommand.HasValue)
+                        {
+                            <span class="command-badge">@Manager.LastCommand</span>
+                        }
+                        else
+                        {
+                            <span class="muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(_masterAgentId))
+                        {
+                            <span class="status-badge master">@_masterAgentId</span>
+                        }
+                        else
+                        {
+                            <span class="muted">—</span>
+                        }
+                    </td>
                 </tr>
             </tbody>
         </table>
         <div class="hardware-meta">
-            <div>Connected: @Manager.IsConnected</div>
-            <div>Last updated: @(Manager.LastUpdated?.ToString("HH:mm:ss") ?? "—")</div>
+            <div class="meta-item">
+                <span class="meta-label">Connected</span>
+                <span class="status-badge @(Manager.IsConnected ? "online" : "offline")">
+                    @(Manager.IsConnected ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Last updated</span>
+                <span class="meta-value">@(Manager.LastUpdated?.ToString("HH:mm:ss") ?? "—")</span>
+            </div>
         </div>
     </section>
 </main>
@@ -81,21 +123,21 @@
         </label>
     </div>
     <div class="button-row">
-        <span>Events:</span>
-        <button @onclick="() => SendEventAsync(AgentEvent.SessionStart)">SessionStart</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.UserPromptSubmit)">UserPromptSubmit</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.PreToolUse)">PreToolUse</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.PostToolUse)">PostToolUse</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.PermissionRequest)">PermissionRequest</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.Stop)">Stop</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.StopFailure)">StopFailure</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.SessionEnd)">SessionEnd</button>
-        <button @onclick="() => SendEventAsync(AgentEvent.Disconnect)">Disconnect</button>
+        <span class="button-group-label">Events:</span>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.SessionStart)">SessionStart</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.UserPromptSubmit)">UserPromptSubmit</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.PreToolUse)">PreToolUse</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.PostToolUse)">PostToolUse</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.PermissionRequest)">PermissionRequest</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.Stop)">Stop</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.StopFailure)">StopFailure</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.SessionEnd)">SessionEnd</button>
+        <button class="btn-event" @onclick="() => SendEventAsync(AgentEvent.Disconnect)">Disconnect</button>
     </div>
     <div class="button-row">
-        <span>Master:</span>
-        <button @onclick="() => SetMasterAsync(true)">Claim Master</button>
-        <button @onclick="() => SetMasterAsync(false)">Release Master</button>
+        <span class="button-group-label">Master:</span>
+        <button class="btn-master" @onclick="() => SetMasterAsync(true)">Claim Master</button>
+        <button class="btn-master secondary" @onclick="() => SetMasterAsync(false)">Release Master</button>
     </div>
 </section>
 
