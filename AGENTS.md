@@ -143,8 +143,8 @@ Planned endpoints (see `docs/plan/v1.0-development-plan.md`):
 |----------|---------|
 | `POST /hook` | Receive agent lifecycle events |
 | `POST /heartbeat` | Keep a session alive |
-| `POST /api/light` | Enable/disable light for a session |
-| `GET /api/status` | Current state, winner, sessions |
+| `POST /api/master` | Claim or release master control for a session |
+| `GET /api/status` | Current state, master, sessions |
 | `GET /api/sessions` | All active sessions |
 | `GET /stream` | SSE stream of state changes |
 | `GET /` | Dashboard |
