@@ -88,12 +88,22 @@ public static class AgentEndpoints
 
     private static IResult HandleMaster(
         MasterRequest request,
-        IAgentStore store)
+        IAgentStore store,
+        StateChangeNotifier notifier,
+        TimeProvider timeProvider)
     {
         if (request.Enabled)
         {
             if (store.TrySetMaster(request.AgentId))
             {
+                notifier.Publish(
+                    new StateChangedEvent
+                    {
+                        Command = null,
+                        MasterAgentId = request.AgentId,
+                        Timestamp = timeProvider.GetUtcNow()
+                    });
+
                 return Results.Ok(new MasterResponse
                 {
                     Ok = true,
@@ -114,6 +124,17 @@ public static class AgentEndpoints
 
         var released = store.TryReleaseMaster(request.AgentId);
         var isStillMaster = !released && store.GetMasterAgentId() == request.AgentId;
+
+        if (released)
+        {
+            notifier.Publish(
+                new StateChangedEvent
+                {
+                    Command = null,
+                    MasterAgentId = null,
+                    Timestamp = timeProvider.GetUtcNow()
+                });
+        }
 
         return Results.Ok(new MasterResponse
         {

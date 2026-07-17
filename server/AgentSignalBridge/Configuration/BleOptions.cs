@@ -11,6 +11,13 @@ public sealed class BleOptions
     public const string SectionName = "Ble";
 
     /// <summary>
+    /// Gets or sets a value indicating whether the BLE hardware driver is enabled.
+    /// When <see langword="false"/>, a no-op driver is used so the server can run
+    /// without the AgentCore-Light device attached.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the BLE device MAC address, e.g. "9C:CC:01:65:6E:72".
     /// If empty, the server will scan for <see cref="DeviceName"/>.
     /// </summary>

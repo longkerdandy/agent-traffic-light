@@ -1,0 +1,152 @@
+@page "/"
+@using AgentSignalBridge.Server.Api
+@using AgentSignalBridge.Server.Dashboard
+@using AgentSignalBridge.Server.Hardware
+@using AgentSignalBridge.Server.Models
+@using AgentSignalBridge.Server.Stores
+@implements IDisposable
+@inject IAgentStore Store
+@inject IAgentCoreLightManager Manager
+@inject DashboardStateService DashboardState
+
+<PageTitle>Agent Signal Bridge Dashboard</PageTitle>
+
+<header class="dashboard-header">
+    <h1>Agent Signal Bridge <span class="subtitle">Dashboard</span></h1>
+</header>
+
+<main class="dashboard-main">
+    <section class="panel" aria-labelledby="active-agents-heading">
+        <h2 id="active-agents-heading">Active Agents</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Agent ID</th>
+                    <th>Name</th>
+                    <th>Last Event</th>
+                    <th>Master</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var agent in _agents)
+                {
+                    <tr class="@GetRowClass(agent)">
+                        <td>@agent.AgentId</td>
+                        <td>@agent.AgentName</td>
+                        <td>@agent.Event</td>
+                        <td>@(agent.IsMaster ? "●" : "○")</td>
+                        <td>@agent.LastSeen.ToString("HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel" aria-labelledby="active-hardware-heading">
+        <h2 id="active-hardware-heading">Active Hardware</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th>Master</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>AgentCore-Light</td>
+                    <td>@Manager.LastCommand</td>
+                    <td>@_masterAgentId</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="hardware-meta">
+            <div>Connected: @Manager.IsConnected</div>
+            <div>Last updated: @(Manager.LastUpdated?.ToString("HH:mm:ss") ?? "—")</div>
+        </div>
+    </section>
+</main>
+
+<section class="panel manual-controls" aria-labelledby="manual-controls-heading">
+    <h2 id="manual-controls-heading">Manual Controls</h2>
+    <div class="control-row">
+        <label>
+            Agent ID
+            <input type="text" @bind="_agentId" placeholder="agent-1" />
+        </label>
+        <label>
+            Agent Name
+            <input type="text" @bind="_agentName" placeholder="kimi" />
+        </label>
+    </div>
+    <div class="button-row">
+        <span>Events:</span>
+        <button @onclick="() => SendEventAsync(AgentEvent.SessionStart)">SessionStart</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.UserPromptSubmit)">UserPromptSubmit</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.PreToolUse)">PreToolUse</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.PostToolUse)">PostToolUse</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.PermissionRequest)">PermissionRequest</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.Stop)">Stop</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.StopFailure)">StopFailure</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.SessionEnd)">SessionEnd</button>
+        <button @onclick="() => SendEventAsync(AgentEvent.Disconnect)">Disconnect</button>
+    </div>
+    <div class="button-row">
+        <span>Master:</span>
+        <button @onclick="() => SetMasterAsync(true)">Claim Master</button>
+        <button @onclick="() => SetMasterAsync(false)">Release Master</button>
+    </div>
+</section>
+
+@code {
+    private string _agentId = "manual-agent";
+    private string _agentName = "manual";
+    private List<Agent> _agents = [];
+    private string? _masterAgentId;
+
+    protected override void OnInitialized()
+    {
+        RefreshState();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            DashboardState.OnChange += OnStateChanged;
+        }
+    }
+
+    public void Dispose()
+    {
+        DashboardState.OnChange -= OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            RefreshState();
+            StateHasChanged();
+        });
+    }
+
+    private void RefreshState()
+    {
+        _agents = [.. Store.GetSnapshot().OrderByDescending(a => a.IsMaster).ThenByDescending(a => a.LastSeen)];
+        _masterAgentId = Store.GetMasterAgentId();
+    }
+
+    private static string GetRowClass(Agent agent) => agent.IsMaster ? "master-row" : string.Empty;
+
+    private async Task SendEventAsync(AgentEvent agentEvent)
+    {
+        await DashboardState.SendEventAsync(_agentId, _agentName, agentEvent).ConfigureAwait(false);
+    }
+
+    private async Task SetMasterAsync(bool enabled)
+    {
+        await DashboardState.SetMasterAsync(_agentId, enabled).ConfigureAwait(false);
+    }
+}

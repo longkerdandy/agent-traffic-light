@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using AgentSignalBridge.Server.Configuration;
+using AgentSignalBridge.Server.Dashboard;
 using AgentSignalBridge.Server.Drivers;
 using AgentSignalBridge.Server.Endpoints;
 using AgentSignalBridge.Server.Events;
@@ -39,10 +40,22 @@ public sealed class Program
             .Get<ServerOptions>() ?? new ServerOptions();
         builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, $"http://{serverOptions.Host}:{serverOptions.Port}");
 
+        var bleOptions = builder.Configuration
+            .GetSection(BleOptions.SectionName)
+            .Get<BleOptions>() ?? new BleOptions();
+
         builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
         builder.Services.AddSingleton<StateChangeNotifier>();
         builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
-        builder.Services.AddSingleton<IAgentCoreLightDriver, BleAgentCoreLightDriver>();
+
+        if (bleOptions.Enabled)
+        {
+            builder.Services.AddSingleton<IAgentCoreLightDriver, BleAgentCoreLightDriver>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<IAgentCoreLightDriver, NoOpAgentCoreLightDriver>();
+        }
         builder.Services.AddSingleton<IAgentCoreLightManager, AgentCoreLightManager>();
         builder.Services.AddSingleton<AgentCoreLightManager>(
             sp => (AgentCoreLightManager)sp.GetRequiredService<IAgentCoreLightManager>());
@@ -52,9 +65,15 @@ public sealed class Program
             sp => sp.GetRequiredService<AgentCoreLightManager>());
         builder.Services.AddSingleton<AgentEventDispatcher>();
         builder.Services.AddSingleton<AgentLifecycleService>();
+        builder.Services.AddSingleton<DashboardStateService>();
+        builder.Services.AddRazorPages();
+        builder.Services.AddServerSideBlazor();
+        builder.Services.AddHttpClient();
 
         var app = builder.Build();
         app.MapAgentEndpoints();
+        app.MapBlazorHub();
+        app.MapFallbackToPage("/_Host");
         await app.RunAsync().ConfigureAwait(false);
     }
 }
