@@ -9,7 +9,7 @@
   },
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "dotnet.defaultSolution": "server/agent-traffic-light.sln",
+  "dotnet.defaultSolution": "server/agent-signal-bridge.sln",
   "omnisharp.enableEditorConfigSupport": true,
   "omnisharp.enableRoslynAnalyzers": true,
   "[csharp]": {

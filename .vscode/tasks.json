@@ -5,7 +5,7 @@
       "label": "build",
       "command": "dotnet",
       "type": "process",
-      "args": ["build", "${workspaceFolder}/server/agent-traffic-light.sln"],
+      "args": ["build", "${workspaceFolder}/server/agent-signal-bridge.sln"],
       "problemMatcher": "$msCompile",
       "group": {
         "kind": "build",
@@ -16,7 +16,7 @@
       "label": "test",
       "command": "dotnet",
       "type": "process",
-      "args": ["test", "${workspaceFolder}/server/agent-traffic-light.sln"],
+      "args": ["test", "${workspaceFolder}/server/agent-signal-bridge.sln"],
       "problemMatcher": "$msCompile",
       "group": {
         "kind": "test",
@@ -27,7 +27,7 @@
       "label": "format",
       "command": "dotnet",
       "type": "process",
-      "args": ["format", "${workspaceFolder}/server/agent-traffic-light.sln"]
+      "args": ["format", "${workspaceFolder}/server/agent-signal-bridge.sln"]
     }
   ]
 }

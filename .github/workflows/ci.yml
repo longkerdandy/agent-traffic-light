@@ -20,18 +20,18 @@ jobs:
           global-json-file: server/global.json
 
       - name: Restore
-        run: dotnet restore server/agent-traffic-light.sln
+        run: dotnet restore server/agent-signal-bridge.sln
 
       - name: Build
-        run: dotnet build server/agent-traffic-light.sln --no-restore --configuration Release
+        run: dotnet build server/agent-signal-bridge.sln --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test server/agent-traffic-light.sln --no-build --configuration Release --verbosity normal
+        run: dotnet test server/agent-signal-bridge.sln --no-build --configuration Release --verbosity normal
 
       - name: Format check
         run: |
-          dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed
-          dotnet format server/agent-traffic-light.sln --verify-no-changes --verbosity detailed style
+          dotnet format server/agent-signal-bridge.sln --verify-no-changes --verbosity detailed
+          dotnet format server/agent-signal-bridge.sln --verify-no-changes --verbosity detailed style
 
   firmware-build:
     runs-on: ubuntu-latest

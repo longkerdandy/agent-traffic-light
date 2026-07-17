@@ -1,4 +1,4 @@
-# Agent Traffic Light — AI Coding Guide
+# Agent Signal Bridge — AI Coding Guide
 
 This project is a multi-agent hardware bridge for the **AgentCoreLight v1** desktop RGB device. The current implementation is a .NET control server under `server/`.
 
@@ -15,12 +15,12 @@ When adding code, keep server and agent code in their respective top-level direc
 
 ### 1.2 .NET Project Structure
 
-The solution lives at `server/agent-traffic-light.sln` and contains:
+The solution lives at `server/agent-signal-bridge.sln` and contains:
 
 | Project | Purpose |
 |---------|---------|
-| `AgentTrafficLightServer` | Main executable. Hosts the HTTP API, session arbitration, BLE hardware control, and shared DTOs. |
-| `AgentTrafficLightServer.Tests` | Unit and integration tests. |
+| `AgentSignalBridge` | Main executable. Hosts the HTTP API, session arbitration, BLE hardware control, and shared DTOs. |
+| `AgentSignalBridge.Tests` | Unit and integration tests. |
 
 Shared MSBuild settings are in `server/Directory.Build.props`. The SDK version is pinned in `server/global.json`.
 

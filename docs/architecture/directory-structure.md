@@ -1,6 +1,6 @@
 # Project Directory Structure
 
-This document defines the repository layout for `agent-traffic-light`. It keeps the **control server** and **agent integrations** as two clearly separated top-level concerns while keeping future agents easy to add.
+This document defines the repository layout for `agent-signal-bridge`. It keeps the **control server** and **agent integrations** as two clearly separated top-level concerns while keeping future agents easy to add.
 
 ## Design Principles
 
@@ -14,11 +14,11 @@ This document defines the repository layout for `agent-traffic-light`. It keeps 
 ## Directory Tree
 
 ```text
-agent-traffic-light/
+agent-signal-bridge/
 ├── .gitignore
 ├── AGENTS.md
 ├── README.md
-├── agent-traffic-light.sln          # .NET solution (server projects)
+├── agent-signal-bridge.sln          # .NET solution (server projects)
 ├── Directory.Build.props            # Common MSBuild properties
 ├── global.json                      # .NET SDK version pin
 ├── .editorconfig
@@ -35,8 +35,8 @@ agent-traffic-light/
 ├── scripts/                         # cross-component orchestration scripts
 │   └── install-all.sh
 ├── server/                          # everything server-side
-│   ├── AgentTrafficLightServer/           # ASP.NET Core control service
-│   │   ├── AgentTrafficLightServer.csproj
+│   ├── AgentSignalBridge/           # ASP.NET Core control service
+│   │   ├── AgentSignalBridge.csproj
 │   │   ├── Program.cs
 │   │   ├── appsettings.json
 │   │   ├── appsettings.Development.json
@@ -61,10 +61,10 @@ agent-traffic-light/
 │   │       ├── index.html
 │   │       ├── app.js
 │   │       └── styles.css
-│   ├── AgentTrafficLightServer.Tests/     # xUnit / NUnit tests for the server
-│   │   └── AgentTrafficLightServer.Tests.csproj
-│   ├── AgentTrafficLight.Contracts/       # shared .NET DTOs / constants
-│   │   └── AgentTrafficLight.Contracts.csproj
+│   ├── AgentSignalBridge.Tests/     # xUnit / NUnit tests for the server
+│   │   └── AgentSignalBridge.Tests.csproj
+│   ├── AgentSignalBridge/       # shared .NET DTOs / constants
+│   │   └── AgentSignalBridge.csproj
 │   └── scripts/                           # service install / uninstall scripts
 │       ├── install-windows-service.ps1
 │       ├── uninstall-windows-service.ps1
@@ -94,13 +94,13 @@ agent-traffic-light/
 
 | Path | Responsibility |
 |------|----------------|
-| `server/AgentTrafficLightServer` | The single .NET process that hosts the HTTP API, SSE stream, session store, state arbitration, hardware control, and dashboard. |
-| `server/AgentTrafficLightServer/Endpoints/` | Minimal-API route handlers grouped by feature (`/hook`, `/heartbeat`, `/api/master`, `/api/status`, `/stream`). |
-| `server/AgentTrafficLightServer/Services/` | Core business logic: session tracking, state arbitration, and agent lifecycle coordination. |
-| `server/AgentTrafficLightServer/Models/` | C# records/classes for sessions, hook payloads, and API responses. |
-| `server/AgentTrafficLightServer/wwwroot/` | Static dashboard files served at `/`. |
-| `server/AgentTrafficLight.Contracts/` | Shared .NET library for DTOs and constants. Kept inside `server/` because v1.0 only the server consumes it. |
-| `server/AgentTrafficLightServer.Tests/` | Server-side unit/integration tests. |
+| `server/AgentSignalBridge` | The single .NET process that hosts the HTTP API, SSE stream, session store, state arbitration, hardware control, and dashboard. |
+| `server/AgentSignalBridge/Endpoints/` | Minimal-API route handlers grouped by feature (`/hook`, `/heartbeat`, `/api/master`, `/api/status`, `/stream`). |
+| `server/AgentSignalBridge/Services/` | Core business logic: session tracking, state arbitration, and agent lifecycle coordination. |
+| `server/AgentSignalBridge/Models/` | C# records/classes for sessions, hook payloads, and API responses. |
+| `server/AgentSignalBridge/wwwroot/` | Static dashboard files served at `/`. |
+| `server/AgentSignalBridge/` | Shared .NET library for DTOs and constants. Kept inside `server/` because v1.0 only the server consumes it. |
+| `server/AgentSignalBridge.Tests/` | Server-side unit/integration tests. |
 | `server/scripts/` | Server-specific install / uninstall scripts (Windows service, systemd). |
 | `agents/kimi/` | Kimi Code integration: hook forwarder, resident heartbeat, skill definition, and installer. |
 | `agents/claude/` | Reserved for future Claude Code hooks / installer. |
@@ -112,8 +112,8 @@ agent-traffic-light/
 
 ## Naming Conventions
 
-- **.NET projects**: `PascalCase` matching the namespace, e.g. `AgentTrafficLightServer.csproj`.
-- **Agent client projects**: under `agents/<agent>/`, use the agent name in project metadata, e.g. `@agent-traffic-light/kimi`.
+- **.NET projects**: `PascalCase` matching the namespace, e.g. `AgentSignalBridge.csproj`.
+- **Agent client projects**: under `agents/<agent>/`, use the agent name in project metadata, e.g. `@agent-signal-bridge/kimi`.
 - **Tests project names**: mirror the project under test with a `.Tests` suffix.
 - **Scripts**: `verb-noun.ext`, e.g. `install-windows-service.ps1`, `install-kimi-hooks.sh`.
 - **Docs**: `kebab-case.md`.
@@ -121,5 +121,5 @@ agent-traffic-light/
 ## Future Expansion
 
 - Adding a new agent (e.g. `windsurf`) means creating `agents/windsurf/` with its own runtime, hooks, installer, and tests. No server code changes are required unless the new agent introduces a new event type.
-- If an agent client is written in .NET and needs shared DTOs, move `server/AgentTrafficLight.Contracts/` to a top-level `shared/` or `contracts/` directory.
+- If an agent client is written in .NET and needs shared DTOs, move `server/AgentSignalBridge/` to a top-level `shared/` or `contracts/` directory.
 - macOS support, BLE transport, or persistent history would each get their own folder under `server/` or a new top-level `platforms/` directory if they outgrow the current layout.

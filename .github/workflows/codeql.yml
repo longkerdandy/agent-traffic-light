@@ -33,7 +33,7 @@ jobs:
           global-json-file: server/global.json
 
       - name: Build
-        run: dotnet build server/agent-traffic-light.sln --configuration Release
+        run: dotnet build server/agent-signal-bridge.sln --configuration Release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

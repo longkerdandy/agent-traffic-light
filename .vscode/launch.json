@@ -6,9 +6,9 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/server/AgentTrafficLightServer/bin/Debug/net10.0/AgentTrafficLightServer.dll",
+      "program": "${workspaceFolder}/server/AgentSignalBridge/bin/Debug/net10.0-windows10.0.19041.0/AgentSignalBridge.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/server/AgentTrafficLightServer",
+      "cwd": "${workspaceFolder}/server/AgentSignalBridge",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"

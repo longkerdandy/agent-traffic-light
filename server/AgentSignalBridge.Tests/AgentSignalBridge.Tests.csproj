@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>AgentSignalBridge.Tests</AssemblyName>
+    <RootNamespace>AgentSignalBridge.Server.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- NETSDK1188 is raised when running in invariant globalization mode (no ICU installed). -->
+    <NoWarn>$(NoWarn);NETSDK1188;CA1707;CA1861</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="AgentSignalBridge.Server.Drivers" />
+    <Using Include="AgentSignalBridge.Server.Events" />
+    <Using Include="AgentSignalBridge.Server.Hardware" />
+    <Using Include="AgentSignalBridge.Server.Models" />
+    <Using Include="AgentSignalBridge.Server.Services" />
+    <Using Include="AgentSignalBridge.Server.Stores" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AgentSignalBridge\AgentSignalBridge.csproj" />
+  </ItemGroup>
+
+</Project>
