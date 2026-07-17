@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using AgentTrafficLight.Contracts.Models;
+using AgentTrafficLight.Server.Configuration;
 using AgentTrafficLight.Server.Models;
+using Microsoft.Extensions.Options;
 
 namespace AgentTrafficLight.Server.Stores;
 
@@ -21,6 +24,16 @@ public sealed class InMemoryAgentStore : IAgentStore, IDisposable
     /// </summary>
     public InMemoryAgentStore()
         : this(TimeSpan.FromSeconds(120))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InMemoryAgentStore"/> class
+    /// using the configured agent options.
+    /// </summary>
+    /// <param name="options">The agent options.</param>
+    public InMemoryAgentStore(IOptions<AgentOptions> options)
+        : this(TimeSpan.FromSeconds(options.Value.TtlSeconds))
     {
     }
 

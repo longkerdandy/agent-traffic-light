@@ -1,6 +1,8 @@
+using AgentTrafficLight.Contracts.Api;
+using AgentTrafficLight.Contracts.Drivers;
+using AgentTrafficLight.Contracts.Models;
 using AgentTrafficLight.Server.Drivers;
 using AgentTrafficLight.Server.Events;
-using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Stores;
 
 namespace AgentTrafficLight.Server.Hardware;
@@ -11,10 +13,11 @@ namespace AgentTrafficLight.Server.Hardware;
 /// and maps them to AgentCoreLight commands sent through the bound driver, but only
 /// for the current master agent.
 /// </summary>
-public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedService
+public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedService, IAgentCoreLightManager
 {
     private readonly IAgentStore _store;
     private readonly IAgentCoreLightDriver _driver;
+    private readonly StateChangeNotifier _stateChangeNotifier;
     private readonly ILogger<AgentCoreLightManager> _logger;
 
     /// <summary>
@@ -22,13 +25,24 @@ public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedServic
     /// </summary>
     /// <param name="store">The agent session store.</param>
     /// <param name="driver">The bound driver for AgentCore-Light hardware.</param>
+    /// <param name="stateChangeNotifier">The state change notifier for SSE subscribers.</param>
     /// <param name="logger">The logger.</param>
-    public AgentCoreLightManager(IAgentStore store, IAgentCoreLightDriver driver, ILogger<AgentCoreLightManager> logger)
+    public AgentCoreLightManager(IAgentStore store, IAgentCoreLightDriver driver, StateChangeNotifier stateChangeNotifier, ILogger<AgentCoreLightManager> logger)
     {
         _store = store;
         _driver = driver;
+        _stateChangeNotifier = stateChangeNotifier;
         _logger = logger;
     }
+
+    /// <inheritdoc />
+    public AgentCoreLightCommand? LastCommand { get; private set; }
+
+    /// <inheritdoc />
+    public DateTimeOffset? LastUpdated { get; private set; }
+
+    /// <inheritdoc />
+    public bool IsConnected => _driver.IsConnected;
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -79,6 +93,17 @@ public sealed class AgentCoreLightManager : IAgentEventSubscriber, IHostedServic
             command);
 
         await _driver.SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+
+        LastCommand = command;
+        LastUpdated = DateTimeOffset.UtcNow;
+
+        _stateChangeNotifier.Publish(
+            new StateChangedEvent
+            {
+                Command = command,
+                MasterAgentId = _store.GetMasterAgentId(),
+                Timestamp = LastUpdated.Value
+            });
     }
 
     private static AgentCoreLightCommand MapEventToCommand(AgentEvent agentEvent) => agentEvent switch

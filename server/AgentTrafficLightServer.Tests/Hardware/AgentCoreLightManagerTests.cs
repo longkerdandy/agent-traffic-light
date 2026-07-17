@@ -11,12 +11,13 @@ public sealed class AgentCoreLightManagerTests : IDisposable
 {
     private readonly InMemoryAgentStore _store = new();
     private readonly FakeAgentCoreLightDriver _driver = new();
+    private readonly StateChangeNotifier _stateChangeNotifier = new();
     private readonly FakeLogger<AgentCoreLightManager> _logger = new();
     private readonly AgentCoreLightManager _manager;
 
     public AgentCoreLightManagerTests()
     {
-        _manager = new AgentCoreLightManager(_store, _driver, _logger);
+        _manager = new AgentCoreLightManager(_store, _driver, _stateChangeNotifier, _logger);
     }
 
     public void Dispose()

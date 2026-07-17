@@ -1,11 +1,11 @@
 using AgentTrafficLight.Contracts.Models;
 
-namespace AgentTrafficLight.Server.Models;
+namespace AgentTrafficLight.Contracts.Api;
 
 /// <summary>
-/// Represents an active agent session tracked by the server.
+/// Request body for reporting an agent lifecycle event.
 /// </summary>
-public sealed class Agent
+public sealed class HookRequest
 {
     /// <summary>
     /// Gets or sets the agent identifier.
@@ -23,17 +23,7 @@ public sealed class Agent
     public string? Cwd { get; set; }
 
     /// <summary>
-    /// Gets or sets the latest agent lifecycle event.
+    /// Gets or sets the canonical agent lifecycle event.
     /// </summary>
     public AgentEvent Event { get; set; }
-
-    /// <summary>
-    /// Gets or sets the last time the agent was seen.
-    /// </summary>
-    public DateTimeOffset LastSeen { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether this agent is currently the master agent.
-    /// </summary>
-    public bool IsMaster { get; set; }
 }
