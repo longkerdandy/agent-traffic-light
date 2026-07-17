@@ -1,4 +1,4 @@
-namespace AgentTrafficLight.Contracts.Api;
+namespace AgentTrafficLight.Server.Api;
 
 /// <summary>
 /// Request body for keeping a session alive.

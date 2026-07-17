@@ -1,6 +1,6 @@
-using AgentTrafficLight.Contracts.Models;
+using AgentTrafficLight.Server.Models;
 
-namespace AgentTrafficLight.Contracts.Api;
+namespace AgentTrafficLight.Server.Api;
 
 /// <summary>
 /// Request body for reporting an agent lifecycle event.

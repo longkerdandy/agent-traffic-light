@@ -1,4 +1,4 @@
-namespace AgentTrafficLight.Contracts.Drivers;
+namespace AgentTrafficLight.Server.Drivers;
 
 /// <summary>
 /// Canonical AgentCoreLight commands sent to AgentCore-Light compatible hardware.

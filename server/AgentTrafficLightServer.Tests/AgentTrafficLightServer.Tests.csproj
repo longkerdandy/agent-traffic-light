@@ -21,8 +21,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="AgentTrafficLight.Contracts.Drivers" />
-    <Using Include="AgentTrafficLight.Contracts.Models" />
     <Using Include="AgentTrafficLight.Server.Drivers" />
     <Using Include="AgentTrafficLight.Server.Events" />
     <Using Include="AgentTrafficLight.Server.Hardware" />

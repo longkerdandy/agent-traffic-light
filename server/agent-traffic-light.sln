@@ -8,8 +8,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentTrafficLightServer", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentTrafficLightServer.Tests", "AgentTrafficLightServer.Tests\AgentTrafficLightServer.Tests.csproj", "{22222222-3333-4444-5555-666666666666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentTrafficLight.Contracts", "AgentTrafficLight.Contracts\AgentTrafficLight.Contracts.csproj", "{33333333-4444-5555-6666-777777777777}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,10 +22,6 @@ Global
 		{22222222-3333-4444-5555-666666666666}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22222222-3333-4444-5555-666666666666}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22222222-3333-4444-5555-666666666666}.Release|Any CPU.Build.0 = Release|Any CPU
-		{33333333-4444-5555-6666-777777777777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{33333333-4444-5555-6666-777777777777}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{33333333-4444-5555-6666-777777777777}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{33333333-4444-5555-6666-777777777777}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -35,6 +29,5 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{11111111-2222-3333-4444-555555555555} = {A1B2C3D4-E5F6-7890-1234-567890ABCDEF}
 		{22222222-3333-4444-5555-666666666666} = {A1B2C3D4-E5F6-7890-1234-567890ABCDEF}
-		{33333333-4444-5555-6666-777777777777} = {A1B2C3D4-E5F6-7890-1234-567890ABCDEF}
 	EndGlobalSection
 EndGlobal

@@ -1,5 +1,5 @@
-using AgentTrafficLight.Contracts.Models;
 using AgentTrafficLight.Server.Events;
+using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Stores;
 
 namespace AgentTrafficLight.Server.Services;

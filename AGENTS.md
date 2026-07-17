@@ -19,8 +19,7 @@ The solution lives at `server/agent-traffic-light.sln` and contains:
 
 | Project | Purpose |
 |---------|---------|
-| `AgentTrafficLightServer` | Main executable. Hosts the HTTP API, session arbitration, BLE hardware control, and dashboard. |
-| `AgentTrafficLight.Contracts` | Shared DTOs and constants. |
+| `AgentTrafficLightServer` | Main executable. Hosts the HTTP API, session arbitration, BLE hardware control, and shared DTOs. |
 | `AgentTrafficLightServer.Tests` | Unit and integration tests. |
 
 Shared MSBuild settings are in `server/Directory.Build.props`. The SDK version is pinned in `server/global.json`.

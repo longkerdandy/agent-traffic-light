@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <AssemblyName>AgentTrafficLight.Contracts</AssemblyName>
-    <RootNamespace>AgentTrafficLight.Contracts</RootNamespace>
-  </PropertyGroup>
-
-</Project>

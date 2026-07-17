@@ -1,7 +1,7 @@
-using AgentTrafficLight.Contracts.Drivers;
-using AgentTrafficLight.Contracts.Models;
+using AgentTrafficLight.Server.Drivers;
+using AgentTrafficLight.Server.Models;
 
-namespace AgentTrafficLight.Contracts.Api;
+namespace AgentTrafficLight.Server.Api;
 
 /// <summary>
 /// Base response returned by API endpoints.

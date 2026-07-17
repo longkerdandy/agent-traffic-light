@@ -1,4 +1,4 @@
-namespace AgentTrafficLight.Contracts.Models;
+namespace AgentTrafficLight.Server.Models;
 
 /// <summary>
 /// Canonical agent lifecycle events consumed by the server.

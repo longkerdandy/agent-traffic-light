@@ -28,8 +28,6 @@
     <Content Include="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\AgentTrafficLight.Contracts\AgentTrafficLight.Contracts.csproj" />
-  </ItemGroup>
+
 
 </Project>

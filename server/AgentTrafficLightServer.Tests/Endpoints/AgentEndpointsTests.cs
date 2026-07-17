@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AgentTrafficLight.Contracts.Api;
-using AgentTrafficLight.Contracts.Drivers;
-using AgentTrafficLight.Contracts.Models;
+using AgentTrafficLight.Server.Api;
+using AgentTrafficLight.Server.Drivers;
+using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Tests.Fakes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

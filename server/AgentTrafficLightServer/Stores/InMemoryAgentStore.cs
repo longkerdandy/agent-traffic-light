@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using AgentTrafficLight.Contracts.Models;
 using AgentTrafficLight.Server.Configuration;
 using AgentTrafficLight.Server.Models;
 using Microsoft.Extensions.Options;

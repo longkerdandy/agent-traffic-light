@@ -1,4 +1,3 @@
-using AgentTrafficLight.Contracts.Models;
 using AgentTrafficLight.Server.Models;
 
 namespace AgentTrafficLight.Server.Stores;

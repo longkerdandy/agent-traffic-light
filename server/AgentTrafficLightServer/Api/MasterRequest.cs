@@ -1,4 +1,4 @@
-namespace AgentTrafficLight.Contracts.Api;
+namespace AgentTrafficLight.Server.Api;
 
 /// <summary>
 /// Request body for claiming or releasing master control.

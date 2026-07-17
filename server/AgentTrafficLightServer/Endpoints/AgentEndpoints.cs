@@ -1,9 +1,9 @@
 using System.Text.Json;
-using AgentTrafficLight.Contracts.Api;
-using AgentTrafficLight.Contracts.Drivers;
-using AgentTrafficLight.Contracts.Models;
+using AgentTrafficLight.Server.Api;
+using AgentTrafficLight.Server.Drivers;
 using AgentTrafficLight.Server.Events;
 using AgentTrafficLight.Server.Hardware;
+using AgentTrafficLight.Server.Models;
 using AgentTrafficLight.Server.Services;
 using AgentTrafficLight.Server.Stores;
 using Microsoft.AspNetCore.Builder;

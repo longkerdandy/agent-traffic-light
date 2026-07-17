@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using AgentTrafficLight.Contracts.Api;
+using AgentTrafficLight.Server.Api;
 
 namespace AgentTrafficLight.Server.Events;
 

@@ -1,4 +1,4 @@
-using AgentTrafficLight.Contracts.Drivers;
+using AgentTrafficLight.Server.Drivers;
 
 namespace AgentTrafficLight.Server.Hardware;
 
